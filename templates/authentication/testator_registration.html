@@ -1,0 +1,131 @@
+{% extends '../base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+{% block title %}Registration{% endblock %}
+
+{% block content %}
+<h2 class="text-center">Testator Registration</h2>
+<form method="POST" enctype="multipart/form-data">
+    <!-- CSRF token for Django -->
+    {% csrf_token %}
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Full Name</label>
+            <input type="text" class="form-control" name="full_name" required>
+        </div>
+        <div class="col-md-3 mb-3">
+            <label class="form-label">Gender</label>
+            <select class="form-select" name="gender" required>
+                <option value="">Select</option>
+                <option>Male</option>
+                <option>Female</option>
+                <option>Other</option>
+            </select>
+        </div>
+        <div class="col-md-3 mb-3">
+            <label class="form-label">Date of Birth</label>
+            <input type="date" class="form-control" name="date_of_birth" required>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Nationality</label>
+            <input type="text" class="form-control" name="nationality" value="Tanzanian">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Marital Status</label>
+            <select class="form-select" name="marital_status">
+                <option value="">Select</option>
+                <option>Single</option>
+                <option>Married</option>
+                <option>Divorced</option>
+                <option>Widowed</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Occupation</label>
+            <input type="text" class="form-control" name="occupation">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Religion</label>
+            <input type="text" class="form-control" name="religion">
+        </div>
+    </div>
+
+    <hr class="my-4">
+
+    <h5 class="section-title">Contact Information</h5>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Phone Number</label>
+            <input type="text" class="form-control" name="phone_number" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Email Address</label>
+            <input type="email" class="form-control" name="email" required>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">NIDA Number</label>
+            <input type="text" class="form-control" name="nida_number">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Passport Number</label>
+            <input type="text" class="form-control" name="passport_number">
+        </div>
+    </div>
+
+    <hr class="my-4">
+
+    <h5 class="section-title">Address</h5>
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Street</label>
+            <input type="text" class="form-control" name="street">
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Ward</label>
+            <input type="text" class="form-control" name="ward">
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">District</label>
+            <input type="text" class="form-control" name="district">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Region</label>
+            <input type="text" class="form-control" name="region">
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Country</label>
+            <input type="text" class="form-control" name="country" value="Tanzania">
+        </div>
+        <div class="col-md-2 mb-3">
+            <label class="form-label">Postal Code</label>
+            <input type="text" class="form-control" name="postal_code">
+        </div>
+    </div>
+
+    <hr class="my-4">
+
+    <h5 class="section-title">Documents</h5>
+    <div class="mb-3">
+        <label class="form-label">Upload Profile Photo</label>
+        <input type="file" class="form-control" name="profile_photo">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Upload ID Document</label>
+        <input type="file" class="form-control" name="id_document_scan">
+    </div>
+
+    <div class="text-center mt-4">
+        <button type="submit" class="btn btn-orange btn-lg w-100">Register</button>
+    </div>
+</form>
+{% endblock %}

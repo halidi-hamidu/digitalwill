@@ -1,0 +1,1096 @@
+{% extends '../layout.html' %}
+{% load static %}
+{% load widget_tweaks %}
+{% block title %}dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="profile-header">
+            <h4>Digital wills</h4>
+            <!-- <button type="button" class="btn btn-sm edit-btn text-white" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+                <i class="bi bi-upload"></i> Upload digital will
+            </button> -->
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="profile_inner_content">
+
+            <!-- Tab Navigation -->
+            <ul class="nav nav-tabs" id="infoTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="heir-tab" data-toggle="tab" href="#heir" role="tab">Heir</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="asset-tab" data-toggle="tab" href="#asset" role="tab">Asset</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="special-tab" data-toggle="tab" href="#special" role="tab">SpecialAccount</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="confidential-tab" data-toggle="tab" href="#confidential" role="tab">ConfidentialInfo</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="executor-tab" data-toggle="tab" href="#executor" role="tab">Executor</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="post-tab" data-toggle="tab" href="#post" role="tab">PostDeathInstruction</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="audio-tab" data-toggle="tab" href="#audio" role="tab">AudioInstruction</a>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content pt-3" id="infoTabsContent">
+
+                <!-- Reusable Content Template -->
+                <!-- Start of Single Tab Content -->
+                <!-- Repeat this div with different IDs for each tab -->
+                <!-- Heir -->
+                <div class="tab-pane fade show active" id="heir" role="tabpanel">
+                    <div class="table-responsive">
+                        <div class="d-flex justify-content-between align-items-center py-2">
+                            <h4>Heir Lists</h4>
+                            <button type="button" class="btn btn-sm edit-btn text-white" data-bs-toggle="modal" data-bs-target="#addDigitalWillModel">
+                                <i class="bi bi-plus"></i> Add Heir
+                            </button>
+                        </div>
+                        <table class="table table-bordered table-striped heirtable" id="heirtable">
+                            <thead>
+                                <tr>
+                                    <th>SN</th>
+                                    <th>ID</th>
+                                    <th>Testator</th>
+                                    <th>Fullname</th>
+                                    <th>Relationship</th>
+                                    <th>Date of birth</th>
+                                    <th>Phonenumber</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if heirs %}
+                                {% for heir in heirs %}
+                                    <tr>
+                                        <td>{{forloop.counter}}</td>
+                                        <td><span class="badge text-bg-dark">{{heir.id}}</span></td>
+                                        <td>{{heir.testator}}</td>
+                                        <td>{{heir.full_name}}</td>
+                                        <td>{{heir.relationship}}</td>
+                                        <td>{{heir.date_of_birth}}</td>
+                                        <td>{{heir.phone_number}}</td>
+                                        <td>
+                                            <a href="#" data-bs-toggle="modal" data-bs-target="#updateHeirModel{{heir.id}}"><i class="bi bi-pencil-square"></i></a>
+                                            <a href="#" data-bs-toggle="modal" data-bs-target="#deleteHeirModel{{heir.id}}"><i class="bi bi-trash"></i></a>
+                                            <a href="#" data-bs-toggle="offcanvas" data-bs-target="#heirDetailsViewoffcanvas{{heir.id}}" aria-controls="staticBackdrop"><i class="bi bi-eye"></i></a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Asset -->
+                <div class="tab-pane fade" id="asset" role="tabpanel">
+                    <div class="table-responsive">
+                        <div class="d-flex justify-content-between align-items-center py-2">
+                            <h4>Asset Lists</h4>4>
+                            <button type="button" class="btn btn-sm edit-btn text-white" data-bs-toggle="modal" data-bs-target="#addAssetModel">
+                                <i class="bi bi-plus"></i> Add Asset
+                            </button>
+                        </div>
+                        <table class="table table-bordered table-striped assetTable" id="assetTable">
+                            <thead>
+                                <tr>
+                                    <th>SN</th>
+                                    <th>ID</th>
+                                    <th>Testator</th>
+                                    <th>Asset Type</th>
+                                    <th>Location</th>
+                                    <th>Estimated Value</th>
+                                    <th>Assigned To</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if assets %}
+                                {% for asset in assets %}
+                                    <tr>
+                                        <td>{{forloop.counter}}</td>
+                                        <td><span class="badge text-bg-dark">{{asset.id}}</span></td>
+                                        <td>{{asset.testator}}</td>
+                                        <td>{{asset.asset_type}}</td>
+                                        <td>{{asset.location}}</td>
+                                        <td>{{asset.estimated_value}}</td>
+                                        <td>{{asset.assigned_to}}</td>
+                                        <td>
+                                            <a href="#" data-bs-toggle="modal" data-bs-target="#updateAssetModel{{asset.id}}"><i class="bi bi-pencil-square"></i></a>
+                                            <a href="#" data-bs-toggle="modal" data-bs-target="#deleteAssetModel{{asset.id}}"><i class="bi bi-trash"></i></a>
+                                            <a href="#" data-bs-toggle="offcanvas" data-bs-target="#assetDetailsViewoffcanvas{{asset.id}}" aria-controls="staticBackdrop"><i class="bi bi-eye"></i></a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Repeat for all other tabs using same template -->
+                <div class="tab-pane fade" id="special" role="tabpanel">
+                    <div class="table-responsive">
+                        <div class="d-flex justify-content-between align-items-center py-2">
+                            <h4>Account Lists</h4>
+                            <button type="button" class="btn btn-sm edit-btn text-white" data-bs-toggle="modal" data-bs-target="#specialAccountModel">
+                                <i class="bi bi-plus"></i> Add Account
+                            </button>
+                        </div>
+                        
+                        <table class="table table-bordered table-striped specialAccountTable" id="specialAccountTable">
+                            <thead>
+                                <tr>
+                                    <th>SN</th>
+                                    <th>ID</th>
+                                    <th>Testator</th>
+                                    <th>Account Type</th>
+                                    <th>Account Name</th>
+                                    <th>Platform Or Location</th>
+                                    <th>Assigned To</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if special_accounts %}
+                                {% for special_account in special_accounts %}
+                                    <tr>
+                                        <td>{{forloop.counter}}</td>
+                                        <td><span class="badge text-bg-dark">{{special_account.id}}</span></td>
+                                        <td>{{special_account.testator}}</td>
+                                        <td>{{special_account.account_type}}</td>
+                                        <td>{{special_account.account_name}}</td>
+                                        <td>{{special_account.account_number}}</td>
+                                        <td>{{special_account.assigned_to}}</td>
+                                        <td>
+                                            <a href=""><i class="bi bi-pencil-square"></i></a>
+                                            <a href=""><i class="bi bi-trash"></i></a>
+                                            <a href=""><i class="bi bi-eye"></i></a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="confidential" role="tabpanel">
+                    <div class="table-responsive">
+                        <div class="d-flex justify-content-between align-items-center py-2">
+                            <h4>Confidential Info Lists</h4>
+                            <button type="button" class="btn btn-sm edit-btn text-white" data-bs-toggle="modal" data-bs-target="#confidentialInfoModel">
+                                <i class="bi bi-plus"></i> Add Confidential Info
+                            </button>
+                        </div>
+                        
+                        <table class="table table-bordered table-striped confidentialInfoTable" id="confidentialInfoTable">
+                            <thead>
+                                <tr>
+                                    <th>SN</th>
+                                    <th>ID</th>
+                                    <th>Testator</th>
+                                    <th>Instructions</th>
+                                    <th>Confidential File</th>
+                                    <th>Assigned To</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if confidential_infos %}
+                                {% for confidential_info in confidential_infos %}
+                                    <tr>
+                                        <td>{{forloop.counter}}</td>
+                                        <td><span class="badge text-bg-dark">{{confidential_info.id}}</span></td>
+                                        <td>{{confidential_info.testator}}</td>
+                                        <td>{{confidential_info.instructions}}</td>
+                                        <td>{{confidential_info.confidential_file}}</td>
+                                        <td>{{confidential_info.assigned_to}}</td>
+                                        <td>
+                                            <a href=""><i class="bi bi-pencil-square"></i></a>
+                                            <a href=""><i class="bi bi-trash"></i></a>
+                                            <a href=""><i class="bi bi-eye"></i></a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="executor" role="tabpanel">
+                    <div class="table-responsive">
+                        <div class="d-flex justify-content-between align-items-center py-2">
+                            <h4>Executor Lists</h4>
+                            <button type="button" class="btn btn-sm edit-btn text-white" data-bs-toggle="modal" data-bs-target="#addExecutorModel">
+                                <i class="bi bi-plus"></i> Add Executor
+                            </button>
+                        </div>
+                        
+                        <table class="table table-bordered table-striped executorTable" id="executorTable">
+                            <thead>
+                                <tr>
+                                    <th>SN</th>
+                                    <th>ID</th>
+                                    <th>Testator</th>
+                                    <th>Fullname</th>
+                                    <th>Relationship</th>
+                                    <th>Phonenumber</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if executors %}
+                                {% for executor in executors %}
+                                    <tr>
+                                        <td>{{forloop.counter}}</td>
+                                        <td><span class="badge text-bg-dark">{{executor.id}}</span></td>
+                                        <td>{{executor.testator}}</td>
+                                        <td>{{executor.full_name}}</td>
+                                        <td>{{executor.relationship}}</td>
+                                        <td>{{executor.phone_number}}</td>
+                                        <td>
+                                            <a href=""><i class="bi bi-pencil-square"></i></a>
+                                            <a href=""><i class="bi bi-trash"></i></a>
+                                            <a href=""><i class="bi bi-eye"></i></a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="post" role="tabpanel">
+                    <div class="table-responsive">
+                        <div class="d-flex justify-content-between align-items-center py-2">
+                            <h4>Post Death Instruction Lists</h4>
+                            <button type="button" class="btn btn-sm edit-btn text-white" data-bs-toggle="modal" data-bs-target="#addPostDeathInstructionModel">
+                                <i class="bi bi-plus"></i> Add Post Death Instruction
+                            </button>
+                        </div>
+                        
+                        <table class="table table-bordered table-striped postDeathInstructionTable" id="postDeathInstructionTable">
+                            <thead>
+                                <tr>
+                                    <th>SN</th>
+                                    <th>ID</th>
+                                    <th>Testator</th>
+                                    <th>Instructions</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if post_death_instructions %}
+                                {% for post_death_instruction in post_death_instructions %}
+                                    <tr>
+                                        <td>{{forloop.counter}}</td>
+                                        <td><span class="badge text-bg-dark">{{post_death_instruction.id}}</span></td>
+                                        <td>{{post_death_instruction.testator}}</td>
+                                        <td>{{post_death_instruction.instructions}}</td>
+                                        <td>
+                                            <a href=""><i class="bi bi-pencil-square"></i></a>
+                                            <a href=""><i class="bi bi-trash"></i></a>
+                                            <a href=""><i class="bi bi-eye"></i></a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="audio" role="tabpanel">
+                    <div class="table-responsive">
+                        <div class="d-flex justify-content-between align-items-center py-2">
+                            <h4>Audio Instruction Lists</h4>
+                            <button type="button" class="btn btn-sm edit-btn text-white" data-bs-toggle="modal" data-bs-target="#addAudioInstructionModel">
+                                <i class="bi bi-plus"></i> Add Audio Instruction
+                            </button>
+                        </div>
+                        
+                        <table class="table table-bordered table-striped audioInstructionTable" id="audioInstructionTable">
+                            <thead>
+                                <tr>
+                                    <th>SN</th>
+                                    <th>ID</th>
+                                    <th>Testator</th>
+                                    <th>audio_file</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if audio_instructions %}
+                                {% for audio_instruction in audio_instructions %}
+                                    <tr>
+                                        <td>{{forloop.counter}}</td>
+                                        <td><span class="badge text-bg-dark">{{audio_instruction.id}}</span></td>
+                                        <td>{{audio_instruction.testator}}</td>
+                                        <td>{{audio_instruction.audio_file}}</td>
+                                        <td>
+                                            <a href=""><i class="bi bi-pencil-square"></i></a>
+                                            <a href=""><i class="bi bi-trash"></i></a>
+                                            <a href=""><i class="bi bi-eye"></i></a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div> <!-- End tab-content -->
+
+        </div> <!-- End profile_inner_content -->
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="addDigitalWillModel" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addDigitalWillModelLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="addDigitalWillModelLabel">Add Heir</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+        <div class="modal-body">
+            <div class="profile_update_form">
+                <form action="" method="POST" autocomplete="off" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-2 form-group">
+                        <label for="">Fullname</label>
+                        {% render_field her_form.full_name name="full_name" class="form-control input-sm" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Relationship</label>
+                        {% render_field her_form.relationship name="relationship" class="form-control input-sm" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Date of Birth (DoB)</label>
+                        {% render_field her_form.date_of_birth type="date" name="date_of_birth" class="form-control input-sm" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Phonenumber</label>
+                        {% render_field her_form.phone_number name="phone_number" class="form-control input-sm" %}
+                    </div>
+                    <div class="form-roup d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" name="add_heir_btn" class="btn btn-sm edit-btn"> Add Heir</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="addAssetModel" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addAssetModelLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="addAssetModelLabel">Add Asset</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+        <div class="modal-body">
+            <div class="profile_update_form">
+                <form action="" method="POST" autocomplete="off" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-2 form-group">
+                        <label for="">Asset Type</label>
+                        {% render_field asset_form.asset_type name="asset_type" class="form-control input-sm" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Location</label>
+                        {% render_field asset_form.location name="location" class="form-control input-sm" rows="3" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Estimated Value</label>
+                        {% render_field asset_form.estimated_value name="estimated_value" class="form-control input-sm" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Instruction</label>
+                        {% render_field asset_form.instruction name="instruction" class="form-control input-sm" rows="3" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Asset Image</label>
+                        {% render_field asset_form.asset_image name="asset_image" class="form-control input-sm" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Assigned To</label>
+                        {% render_field asset_form.assigned_to name="assigned_to" class="form-control input-sm" %}
+                    </div>
+
+                    <div class="form-roup d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" name="add_asset_btn" class="btn btn-sm edit-btn"> Add Asset</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="specialAccountModel" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="specialAccountModelLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="specialAccountModelLabel">Add Special Account</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+        <div class="modal-body">
+            <div class="profile_update_form">
+                <form action="" method="POST" autocomplete="off" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-2 form-group">
+                        <label for="">Account Type</label>
+                        {% render_field special_account_form.account_type name="account_type" class="form-control input-sm" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Account Name</label>
+                        {% render_field special_account_form.account_name name="account_name" class="form-control input-sm" rows="3" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Account Number</label>
+                        {% render_field special_account_form.account_number name="account_number" class="form-control input-sm" rows="3" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Assigned To</label>
+                        {% render_field special_account_form.assigned_to name="assigned_to" class="form-control input-sm" %}
+                    </div>
+
+                    <div class="form-roup d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" name="add_special_account_btn" class="btn btn-sm edit-btn"> Add Special Account</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="confidentialInfoModel" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="confidentialInfoModelLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="confidentialInfoModelLabel">Add Confidential Info</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+        <div class="modal-body">
+            <div class="profile_update_form">
+                <form action="" method="POST" autocomplete="off" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-2 form-group">
+                        <label for="">Instruction</label>
+                        {% render_field confidential_info_form.instructions name="instructions" class="form-control input-sm" rows="3" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Confidential File</label>
+                        {% render_field confidential_info_form.confidential_file name="confidential_file" class="form-control input-sm" rows="3" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Assigned To</label>
+                        {% render_field confidential_info_form.assigned_to name="assigned_to" class="form-control input-sm" %}
+                    </div>
+
+                    <div class="form-roup d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" name="add_confidential_info_btn" class="btn btn-sm edit-btn"> Add Conidential Info</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="addExecutorModel" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addExecutorModelLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="addExecutorModelLabel">Add Executor</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+        <div class="modal-body">
+            <div class="profile_update_form">
+                <form action="" method="POST" autocomplete="off" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-2 form-group">
+                        <label for="">Fullname</label>
+                        {% render_field executor_form.full_name name="full_name" class="form-control input-sm" rows="3" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Relationship</label>
+                        {% render_field executor_form.relationship name="relationship" class="form-control input-sm" rows="3" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Phonenumber</label>
+                        {% render_field executor_form.phone_number name="phone_number" class="form-control input-sm" %}
+                    </div>
+
+                    <div class="form-roup d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" name="add_executer_btn" class="btn btn-sm edit-btn"> Add Executer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="addPostDeathInstructionModel" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addPostDeathInstructionModelLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="addPostDeathInstructionModelLabel">Add Post Death Instruction</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+        <div class="modal-body">
+            <div class="profile_update_form">
+                <form action="" method="POST" autocomplete="off" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-2 form-group">
+                        <label for="">Instructions</label>
+                        {% render_field post_death_instruction_form.instructions name="instructions" class="form-control input-sm" rows="3" %}
+                    </div>
+
+                    <div class="form-roup d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" name="add_post_death_instruction_btn" class="btn btn-sm edit-btn"> Add Post Death Instruction</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="addAudioInstructionModel" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addAudioInstructionModelLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="addAudioInstructionModelLabel">Add Audio Instruction</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+        <div class="modal-body">
+            <div class="profile_update_form">
+                <form action="" method="POST" autocomplete="off" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-2 form-group">
+                        <label for="">Upload Audio File</label>
+                        {% render_field audio_instruction_form.audio_file name="audio_file" class="form-control input-sm" rows="3" %}
+                    </div>
+
+                    <div class="form-roup d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" name="add_audio_instruction_btn" class="btn btn-sm edit-btn"> Add Audio Instruction</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- Update, Delete, View Heir Modal -->
+{% if heirs %}
+{% for heir in heirs %}
+<div class="modal fade" id="updateHeirModel{{heir.id}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="updateHeirModel{{heir.id}}Label" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="updateHeirModel{{heir.id}}Label">Update Heir</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="profile_update_form">
+            <form action="{% url 'administration:digitalwillupdateheir' heir.id %}" method="POST" autocomplete="off" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="mb-2 form-group">
+                    <label for="">Fullname</label>
+                    <!-- {% render_field her_form.id name="id" class="form-control input-sm" value="{{ heir.id }}" %}
+                    {% render_field her_form.full_name name="full_name" class="form-control input-sm" value="{{ heir.full_name }}" %} -->
+                    <input type="hidden" name="heir_id" class="form-control input-sm" value="{{ heir.id }}">
+                    <input type="text" name="full_name" class="form-control input-sm" value="{{ heir.full_name }}">
+                </div>
+                <div class="mb-2 form-group">
+                    <label for="">Relationship</label>
+                    <input type="text" name="relationship" class="form-control input-sm" value="{{ heir.relationship }}">
+                </div>
+                <div class="mb-2 form-group">
+                    <label for="">Date of Birth (DoB)</label>
+                    {% render_field her_form.date_of_birth name="date_of_birth" class="form-control input-sm" %}
+                    <!-- <input type="date" name="date_of_birth" class="form-control input-sm pb-1" value="{{ heir.date_of_birth }}"> -->
+                    current DoB: {{ heir.date_of_birth }}
+                </div>
+                <div class="mb-2 form-group">
+                    <label for="">Phonenumber</label>
+                    <input type="text" name="phone_number" class="form-control input-sm" value="{{ heir.phone_number }}">
+                </div>
+                <div class="form-roup d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" name="update_heir_btn" class="btn btn-sm edit-btn"> Update Heir</button>
+                </div>
+            </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if heirs %}
+{% for heir in heirs %}
+<div class="modal fade" id="deleteHeirModel{{heir.id}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteHeirModel{{heir.id}}Label" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="deleteHeirModel{{heir.id}}Label">Delete Heir</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="profile_update_form">
+            <form action="{% url 'administration:digitalwilldeleteteheir' heir.id %}" method="POST" autocomplete="off" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="mb-2 form-group">
+                    Are you sure you want to delete this heir ?
+                    <input type="hidden" name="heir_id" class="form-control input-sm" value="{{ heir.id }}">
+                </div>
+                <div class="form-roup d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" name="delete_heir_btn" class="btn btn-sm btn-danger"> Delete</button>
+                </div>
+            </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if heirs %}
+{% for heir in heirs %}
+<div class="offcanvas offcanvas-end w-50" data-bs-backdrop="static" tabindex="-1" id="heirDetailsViewoffcanvas{{heir.id}}" aria-labelledby="heirDetailsViewoffcanvas{{heir.id}}Label">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="heirDetailsViewoffcanvas{{heir.id}}Label">Heir informations</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <div>
+        <div class="profile_inner_content">
+            <p class="text-success">
+                Please review your details below to ensure everything is accurate before proceeding.
+            </p>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped123">
+                    <thead class="table-info">
+                        <tr>
+                            <th colspan="4">Testator informations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Name : </td><td>{{heir.testator.user.first_name}} {{heir.testator.user.last_name}}</td>
+                            <td>Gender : </td><td>{{heir.testator.gender}}</td>
+                        </tr>
+                        <tr>
+                            <td>Date of Birth : </td><td>{{heir.testator.date_of_birth}}</td>
+                            <td>Phonenumber: </td><td>{{heir.testator.phone_number}}</td>
+                        </tr>
+                        <tr>
+                            <td>Email : </td><td>{{heir.testator.user.username}}</td>
+                            <td>Nida Number: </td><td>{{heir.testator.nida_number}}</td>
+                        </tr>
+                        <tr>
+                            <td>Address : </td><td>{{heir.testator.address}}</td>
+                        </tr>
+                    </tbody>
+                    <thead class="table-warning">
+                        <tr>
+                            <th colspan="4">Heir informations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Name : </td><td>{{heir.full_name}}</td>
+                            <td>Relationship : </td><td>{{heir.relationship}}</td>
+                        </tr>
+                        <tr>
+                            <td>Date of Birth : </td><td>{{heir.date_of_birth}}</td>
+                            <td>Phonenumber: </td><td>{{heir.phone_number}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Update, Delete, View Asset Modal -->
+
+{% if assets %}
+{% for asset in assets %}
+<div class="modal fade" id="updateAssetModel{{asset.id}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="updateAssetModel{{asset.id}}Label" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="updateAssetModel{{asset.id}}Label">Update Asset</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="profile_update_form">
+            <form action="{% url 'administration:digitalwillupdateasset' asset.id %}" method="POST" autocomplete="off" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="mb-2 form-group">
+                    <label for="">Asset Type</label>
+                    <!-- {% render_field her_form.id name="id" class="form-control input-sm" value="{{ heir.id }}" %}
+                    {% render_field her_form.full_name name="full_name" class="form-control input-sm" value="{{ heir.full_name }}" %} -->
+                    <input type="hidden" name="heir_id" class="form-control input-sm" value="{{ asset.id }}">
+                    <input type="text" name="asset_type" class="form-control input-sm" value="{{ asset.asset_type }}">
+                </div>
+                <div class="mb-2 form-group">
+                    <label for="">Location</label>
+                    <input type="text" name="location" class="form-control input-sm" value="{{ asset.location }}">
+                </div>
+                <div class="mb-2 form-group">
+                    <label for="">Estimated Value</label>
+                    <input type="number" name="estimated_value" class="form-control input-sm" value="{{ asset.estimated_value }}">
+                </div>
+                <div class="mb-2 form-group">
+                    <label for="">Instruction</label>
+                    {% render_field asset_form_instance.instruction name="instruction" class="form-control input-sm" rows="3" %}
+                    <!-- current instruction: {{asset.instruction}} -->
+                </div>
+                <div class="mb-2 form-group">
+                    <label for="">Asset Image</label>
+                    {% render_field asset_form_instance.asset_image name="asset_image" class="form-control input-sm" %}
+                    <!-- current image: <a href="{{asset.asset_image.urls}}" target="__blank">{{asset.asset_image.name}}</a> -->
+                </div>
+                <div class="mb-2 form-group">
+                    <label for="">Assigned To</label>
+                    {% render_field asset_form_instance.assigned_to name="assigned_to" class="form-control input-sm" %}
+                    current heirs: 
+                    <ul>
+                        {% if asset.assigned_to.all %}
+                            {% for asset_heir in asset.assigned_to.all %}
+                                <li>{{ asset_heir.full_name }}</li>
+                            {% endfor %}
+                        {% else %}
+                            <li>No heir assigned</li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="form-roup d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" name="update_asset_btn" class="btn btn-sm edit-btn"> Update Asset</button>
+                </div>
+            </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if assets %}
+{% for asset in assets %}
+<div class="modal fade" id="deleteAssetModel{{asset.id}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteAssetModel{{asset.id}}Label" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="deleteAssetModel{{asset.id}}Label">Delete Asset</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="profile_update_form">
+            <form action="{% url 'administration:digitalwilldeleteteasset' asset.id %}" method="POST" autocomplete="off" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="mb-2 form-group">
+                    Are you sure you want to delete this asset ?
+                    <input type="hidden" name="heir_id" class="form-control input-sm" value="{{ heir.id }}">
+                </div>
+                <div class="form-roup d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" name="delete_asset_btn" class="btn btn-sm btn-danger"> Delete</button>
+                </div>
+            </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if assets %}
+{% for asset in assets %}
+<div class="offcanvas offcanvas-end w-50" data-bs-backdrop="static" tabindex="-1" id="assetDetailsViewoffcanvas{{asset.id}}" aria-labelledby="assetDetailsViewoffcanvas{{asset.id}}Label">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="assetDetailsViewoffcanvas{{asset.id}}Label">Asset informations</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <div>
+        <div class="profile_inner_content">
+            <p class="text-success">
+                Please review your details below to ensure everything is accurate before proceeding.
+            </p>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped123">
+                    <thead class="table-info">
+                        <tr>
+                            <th colspan="4">Testator informations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Name : </td><td>{{asset.testator.user.first_name}} {{asset.testator.user.last_name}}</td>
+                            <td>Gender : </td><td>{{asset.testator.gender}}</td>
+                        </tr>
+                        <tr>
+                            <td>Date of Birth : </td><td>{{asset.testator.date_of_birth}}</td>
+                            <td>Phonenumber: </td><td>{{asset.testator.phone_number}}</td>
+                        </tr>
+                        <tr>
+                            <td>Email : </td><td>{{asset.testator.user.username}}</td>
+                            <td>Nida Number: </td><td>{{asset.testator.nida_number}}</td>
+                        </tr>
+                        <tr>
+                            <td>Address : </td><td>{{asset.testator.address}}</td>
+                        </tr>
+                    </tbody>
+                    <thead class="table-warning">
+                        <tr>
+                            <th colspan="4">Asset informations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                        <tr>
+                            <td>Asset Type : </td><td>{{asset.asset_type}}</td>
+                            <td>Location : </td><td>{{asset.location}}</td>
+                        </tr>
+                        <tr>
+                            <td>Estimated Value : </td><td>{{asset.estimated_value}}</td>
+                            <td>Asset Image: </td><td><a href="{{asset.asset_image.urls}}">{{asset.asset_image.name}}</a></td>
+                        </tr>
+                        <tr>
+                            <td>Instruction : </td><td>{{asset.instruction}}</td>
+                            <td>Assigned To: </td><td>{{asset.assigned_to}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Update, Delete, View Special Account Modal -->
+{% if assets %}
+{% for asset in assets %}
+<div class="modal fade" id="updateAssetModel{{asset.id}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="updateAssetModel{{asset.id}}Label" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="updateAssetModel{{asset.id}}Label">Update Asset</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="profile_update_form">
+            <form action="{% url 'administration:digitalwillupdateasset' asset.id %}" method="POST" autocomplete="off" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="mb-2 form-group">
+                    <label for="">Asset Type</label>
+                    <!-- {% render_field her_form.id name="id" class="form-control input-sm" value="{{ heir.id }}" %}
+                    {% render_field her_form.full_name name="full_name" class="form-control input-sm" value="{{ heir.full_name }}" %} -->
+                    <input type="hidden" name="heir_id" class="form-control input-sm" value="{{ asset.id }}">
+                    <input type="text" name="asset_type" class="form-control input-sm" value="{{ asset.asset_type }}">
+                </div>
+                <div class="mb-2 form-group">
+                    <label for="">Location</label>
+                    <input type="text" name="location" class="form-control input-sm" value="{{ asset.location }}">
+                </div>
+                <div class="mb-2 form-group">
+                    <label for="">Estimated Value</label>
+                    <input type="number" name="estimated_value" class="form-control input-sm" value="{{ asset.estimated_value }}">
+                </div>
+                <div class="mb-2 form-group">
+                    <label for="">Instruction</label>
+                    {% render_field asset_form_instance.instruction name="instruction" class="form-control input-sm" rows="3" %}
+                    <!-- current instruction: {{asset.instruction}} -->
+                </div>
+                <div class="mb-2 form-group">
+                    <label for="">Asset Image</label>
+                    {% render_field asset_form_instance.asset_image name="asset_image" class="form-control input-sm" %}
+                    <!-- current image: <a href="{{asset.asset_image.urls}}" target="__blank">{{asset.asset_image.name}}</a> -->
+                </div>
+                <div class="mb-2 form-group">
+                    <label for="">Assigned To</label>
+                    {% render_field asset_form_instance.assigned_to name="assigned_to" class="form-control input-sm" %}
+                    current heirs: 
+                    <ul>
+                        {% if asset.assigned_to.all %}
+                            {% for asset_heir in asset.assigned_to.all %}
+                                <li>{{ asset_heir.full_name }}</li>
+                            {% endfor %}
+                        {% else %}
+                            <li>No heir assigned</li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="form-roup d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" name="update_asset_btn" class="btn btn-sm edit-btn"> Update Asset</button>
+                </div>
+            </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if assets %}
+{% for asset in assets %}
+<div class="modal fade" id="deleteAssetModel{{asset.id}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteAssetModel{{asset.id}}Label" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="deleteAssetModel{{asset.id}}Label">Delete Asset</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="profile_update_form">
+            <form action="{% url 'administration:digitalwilldeleteteasset' asset.id %}" method="POST" autocomplete="off" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="mb-2 form-group">
+                    Are you sure you want to delete this asset ?
+                    <input type="hidden" name="heir_id" class="form-control input-sm" value="{{ heir.id }}">
+                </div>
+                <div class="form-roup d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" name="delete_asset_btn" class="btn btn-sm btn-danger"> Delete</button>
+                </div>
+            </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if assets %}
+{% for asset in assets %}
+<div class="offcanvas offcanvas-end w-50" data-bs-backdrop="static" tabindex="-1" id="assetDetailsViewoffcanvas{{asset.id}}" aria-labelledby="assetDetailsViewoffcanvas{{asset.id}}Label">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="assetDetailsViewoffcanvas{{asset.id}}Label">Asset informations</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <div>
+        <div class="profile_inner_content">
+            <p class="text-success">
+                Please review your details below to ensure everything is accurate before proceeding.
+            </p>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped123">
+                    <thead class="table-info">
+                        <tr>
+                            <th colspan="4">Testator informations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Name : </td><td>{{asset.testator.user.first_name}} {{asset.testator.user.last_name}}</td>
+                            <td>Gender : </td><td>{{asset.testator.gender}}</td>
+                        </tr>
+                        <tr>
+                            <td>Date of Birth : </td><td>{{asset.testator.date_of_birth}}</td>
+                            <td>Phonenumber: </td><td>{{asset.testator.phone_number}}</td>
+                        </tr>
+                        <tr>
+                            <td>Email : </td><td>{{asset.testator.user.username}}</td>
+                            <td>Nida Number: </td><td>{{asset.testator.nida_number}}</td>
+                        </tr>
+                        <tr>
+                            <td>Address : </td><td>{{asset.testator.address}}</td>
+                        </tr>
+                    </tbody>
+                    <thead class="table-warning">
+                        <tr>
+                            <th colspan="4">Asset informations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                        <tr>
+                            <td>Asset Type : </td><td>{{asset.asset_type}}</td>
+                            <td>Location : </td><td>{{asset.location}}</td>
+                        </tr>
+                        <tr>
+                            <td>Estimated Value : </td><td>{{asset.estimated_value}}</td>
+                            <td>Asset Image: </td><td><a href="{{asset.asset_image.urls}}">{{asset.asset_image.name}}</a></td>
+                        </tr>
+                        <tr>
+                            <td>Instruction : </td><td>{{asset.instruction}}</td>
+                            <td>Assigned To: </td><td>{{asset.assigned_to}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+{% endblock %}

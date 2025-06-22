@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Profile Update Summary</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        h2 { text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        td, th { padding: 8px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <h2>Profile Update Summary</h2>
+    <table>
+        <tr><th>Full Name</th><td>{{ data.full_name }}</td></tr>
+        <tr><th>Gender</th><td>{{ data.gender }}</td></tr>
+        <tr><th>Date of Birth</th><td>{{ data.date_of_birth }}</td></tr>
+        <tr><th>Phone Number</th><td>{{ data.phone_number }}</td></tr>
+        <tr><th>Email</th><td>{{ data.email }}</td></tr>
+        <tr><th>NIDA Number</th><td>{{ data.nida_number }}</td></tr>
+        <tr><th>Address</th><td>{{ data.address }}</td></tr>
+        <tr><th>Role</th><td>{{ data.roles }}</td></tr>
+    </table>
+</body>
+</html>

@@ -1,0 +1,116 @@
+{% extends '../layout.html' %}
+{% load static %}
+{% load widget_tweaks %}
+{% block title %}dashboard{% endblock %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="profile-header">
+            <h4>Personal Information</h4>
+            <button type="button" class="btn btn-sm edit-btn text-white" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+            <i class="bi bi-pencil-square me-1" data-bs-toggle="modal" data-bs-target="#staticBackdrop"></i> Add Changes
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="profile_inner_content">
+            <p class="text-success">Please! Preview your information, correct if needed, otherwise just click "Add Changes" button to continue.</p>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped123">
+                        <tbody>
+                        <tr>
+                            <td>Name : </td><td>{{userprofile.user.first_name}} {{userprofile.user.last_name}}</td>
+                            <td>Gender : </td><td>{{userprofile.gender}}</td>
+                        </tr>
+                        <tr>
+                            <td>Date of Birth : </td><td>{{userprofile.date_of_birth}}</td>
+                            <td>Phonenumber: </td><td>{{userprofile.phone_number}}</td>
+                        </tr>
+                        <tr>
+                            <td>Email Address : </td><td>{{userprofile.user.username}}</td>
+                            <td>Nida Number : </td><td>{{userprofile.nida_number}}</td>
+                        </tr>
+                        <tr>
+                            <td>Permanent Address : </td><td>{{userprofile.address}}</td>
+                            <td>Permanent Address : </td><td>{{userprofile.address}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="staticBackdropLabel">Edit profile</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+        <div class="modal-body">
+            <div class="profile_update_form">
+                <form action="" method="POST" autocomplete="off" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-2 form-group">
+                        <label for="">Username</label>
+                        <input type="text" name="username" class="form-control input-sm" disabled="disabled" value="{{userprofile.user.username}}">
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Firstname</label>
+                        {% render_field userform.first_name name="first_name" class="form-control input-sm" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Lastname</label>
+                        {% render_field userform.last_name name="first_name" class="form-control input-sm" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Fullname</label>
+                        {% render_field userprofile_form.full_name name="full_name" class="form-control input-sm" disabled="disabled" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Gender</label>
+                        {% render_field userprofile_form.gender name="gender" class="form-control input-sm" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Date of birth (DoB)</label>
+                        {% render_field userprofile_form.date_of_birth type="date" name="date_of_birth" class="form-control input-sm" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Phonenumber</label>
+                        {% render_field userprofile_form.phone_number name="phone_number" class="form-control input-sm" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Email</label>
+                        <input type="text" name="username" class="form-control input-sm" disabled="disabled" value="{{userprofile.user.username}}">
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Nida Number</label>
+                        {% render_field userprofile_form.nida_number name="nida_number" class="form-control input-sm" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Address</label>
+                        {% render_field userprofile_form.address name="address" class="form-control input-sm" rows="3" style="resize:none" %}
+                    </div>
+                    <div class="mb-2 form-group">
+                        <label for="">Profile picture</label>
+                        {% render_field userprofile_form.profie_image name="profie_image" class="form-control input-sm" %}
+                    </div>
+                    <div class="form-roup d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" name="update_user_profile_btn" class="btn btn-sm edit-btn"> Save changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

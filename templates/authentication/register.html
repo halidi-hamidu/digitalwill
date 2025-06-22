@@ -1,0 +1,42 @@
+{% extends '../base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+{% block title %}Registration{% endblock %}
+
+{% block content %}
+
+<div class="container">
+    <div class="register-container">
+        <h2 class="text-center">Create an Account</h2>
+        <form method="POST" autocomplete="off">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                {% render_field register_form.username type="email" name="username" class="form-control" required="required" %}
+                <!-- <input type="email" name="email" class="form-control" required> -->
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                {% render_field register_form.password1 type="password" name="password1" class="form-control" required="required" %}
+                <!-- <input type="password" name="password1" class="form-control" required> -->
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Confirm Password</label>
+                {% render_field register_form.password2 type="password" name="password2" class="form-control" required="required" %}
+                <!-- <input type="password" name="password2" class="form-control" required> -->
+            </div>
+
+            <div class="d-grid">
+                <button type="submit" name="register_user_btn" class="btn btn-orange">Register</button>
+            </div>
+            <div class="text-center mt-3">
+                <small>Already have an account? <a href="{% url 'authentication:auth' %}">Login</a></small>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
