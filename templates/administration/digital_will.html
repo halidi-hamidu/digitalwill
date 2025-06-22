@@ -177,7 +177,7 @@
                                         <td>{{special_account.account_number}}</td>
                                         <td>{{special_account.assigned_to}}</td>
                                         <td>
-                                            <a href=""><i class="bi bi-pencil-square"></i></a>
+                                            <a href="" data-bs-toggle="modal" data-bs-target="#updateSpecialAccountModel{{special_account.id}}"><i class="bi bi-pencil-square"></i></a>
                                             <a href=""><i class="bi bi-trash"></i></a>
                                             <a href=""><i class="bi bi-eye"></i></a>
                                         </td>
@@ -931,62 +931,41 @@
 {% endif %}
 
 <!-- Update, Delete, View Special Account Modal -->
-{% if assets %}
-{% for asset in assets %}
-<div class="modal fade" id="updateAssetModel{{asset.id}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="updateAssetModel{{asset.id}}Label" aria-hidden="true">
+{% if special_accounts %}
+{% for special_account in special_accounts %}
+<div class="modal fade" id="updateSpecialAccountModel{{special_account.id}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="updateSpecialAccountModel{{special_account.id}}Label" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h1 class="modal-title fs-5" id="updateAssetModel{{asset.id}}Label">Update Asset</h1>
+        <h1 class="modal-title fs-5" id="updateSpecialAccountModel{{special_account.id}}Label">Update Special Account</h1>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <div class="profile_update_form">
-            <form action="{% url 'administration:digitalwillupdateasset' asset.id %}" method="POST" autocomplete="off" enctype="multipart/form-data">
+            <form action="{% url 'administration:digitalwillspecialaccount' special_account.id %}" method="POST" autocomplete="off" enctype="multipart/form-data">
                 {% csrf_token %}
 
                 <div class="mb-2 form-group">
-                    <label for="">Asset Type</label>
-                    <!-- {% render_field her_form.id name="id" class="form-control input-sm" value="{{ heir.id }}" %}
-                    {% render_field her_form.full_name name="full_name" class="form-control input-sm" value="{{ heir.full_name }}" %} -->
-                    <input type="hidden" name="heir_id" class="form-control input-sm" value="{{ asset.id }}">
-                    <input type="text" name="asset_type" class="form-control input-sm" value="{{ asset.asset_type }}">
+                    <label for="">Account Type</label>
+                    <input type="hidden" name="special_account_id" id="special_account_id" value="{{special_account.id}}">
+                    {% render_field special_account_form_instance.account_type name="account_type" class="form-control input-sm" %}
                 </div>
                 <div class="mb-2 form-group">
-                    <label for="">Location</label>
-                    <input type="text" name="location" class="form-control input-sm" value="{{ asset.location }}">
+                    <label for="">Account Name</label>
+                    {% render_field special_account_form_instance.account_name name="account_name" class="form-control input-sm" rows="3" %}
                 </div>
                 <div class="mb-2 form-group">
-                    <label for="">Estimated Value</label>
-                    <input type="number" name="estimated_value" class="form-control input-sm" value="{{ asset.estimated_value }}">
-                </div>
-                <div class="mb-2 form-group">
-                    <label for="">Instruction</label>
-                    {% render_field asset_form_instance.instruction name="instruction" class="form-control input-sm" rows="3" %}
-                    <!-- current instruction: {{asset.instruction}} -->
-                </div>
-                <div class="mb-2 form-group">
-                    <label for="">Asset Image</label>
-                    {% render_field asset_form_instance.asset_image name="asset_image" class="form-control input-sm" %}
-                    <!-- current image: <a href="{{asset.asset_image.urls}}" target="__blank">{{asset.asset_image.name}}</a> -->
+                    <label for="">Account Number</label>
+                    {% render_field special_account_form_instance.account_number name="account_number" class="form-control input-sm" rows="3" %}
                 </div>
                 <div class="mb-2 form-group">
                     <label for="">Assigned To</label>
-                    {% render_field asset_form_instance.assigned_to name="assigned_to" class="form-control input-sm" %}
-                    current heirs: 
-                    <ul>
-                        {% if asset.assigned_to.all %}
-                            {% for asset_heir in asset.assigned_to.all %}
-                                <li>{{ asset_heir.full_name }}</li>
-                            {% endfor %}
-                        {% else %}
-                            <li>No heir assigned</li>
-                        {% endif %}
-                    </ul>
+                    {% render_field special_account_form_instance.assigned_to name="assigned_to" class="form-control input-sm" %}
                 </div>
+                
                 <div class="form-roup d-flex justify-content-end gap-2">
                     <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" name="update_asset_btn" class="btn btn-sm edit-btn"> Update Asset</button>
+                    <button type="submit" name="update_special_account_btn" class="btn btn-sm edit-btn"> Update Asset</button>
                 </div>
             </form>
         </div>

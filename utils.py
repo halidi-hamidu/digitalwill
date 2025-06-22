@@ -213,3 +213,35 @@ def generate_post_death_pdf(instruction_data, testator_name):
     doc.build(elements)
     buffer.seek(0)
     return buffer
+
+def generate_asset_update_pdf(data, full_name):
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer)
+    p.drawString(100, 800, f"Asset Update Summary for {full_name}")
+    p.drawString(100, 780, f"Type: {data['asset_type']}")
+    p.drawString(100, 760, f"Location: {data['location']}")
+    p.drawString(100, 740, f"Estimated Value: {data['estimated_value']}")
+    p.drawString(100, 720, f"Instruction: {data['instruction'][:100]}")
+    p.drawString(100, 700, f"Image: {data['asset_image_name']}")
+    p.showPage()
+    p.save()
+    buffer.seek(0)
+    return buffer
+
+def generate_asset_delete_pdf(asset_data, full_name):
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=A4)
+
+    p.drawString(100, 800, f"Asset Deletion Summary for {full_name}")
+    p.drawString(100, 780, f"Asset Type: {asset_data.get('asset_type')}")
+    p.drawString(100, 760, f"Location: {asset_data.get('location')}")
+    p.drawString(100, 740, f"Estimated Value: {asset_data.get('estimated_value', 'N/A')}")
+    p.drawString(100, 720, f"Instruction: {asset_data.get('instruction', 'N/A')[:100]}...")
+
+    p.drawString(100, 700, f"Deletion Requested By: {full_name}")
+    p.drawString(100, 680, "Date: ___________________________")
+
+    p.showPage()
+    p.save()
+    buffer.seek(0)
+    return buffer

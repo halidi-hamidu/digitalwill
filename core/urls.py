@@ -22,7 +22,8 @@ from django.conf import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include("authentication.urls", namespace="authentication")),
+    path('', include("digitalwillclient.urls", namespace="digitalwillclient")),
+    path('authentication', include("authentication.urls", namespace="authentication")),
     path('administration/', include("administration.urls", namespace="administration"))
 ]
 

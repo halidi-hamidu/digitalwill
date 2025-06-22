@@ -24,7 +24,21 @@ urlpatterns = [
     path("verify-executor/<str:token>/", views.verify_executor, name="verify_executor"),
     path("verify-instruction/<str:token>/", views.verify_instruction, name="verify_instruction"),
     path("verify-audio/<str:token>/", views.verify_audio, name="verify_audio"),
+    path("verify-asset-update/<str:token>/", views.verify_asset_update, name="verify_asset_update"),
+    path("verify-asset-delete/<str:token>/", views.verify_asset_delete, name="verify_asset_delete"),
+    path(
+        'digital-wills/special_account/update/<str:special_account_id>/',
+        views.digitalwillUpdateSpecialAccountview,
+        name='digitalwillspecialaccount'
+    ),
+    path(
+        'digital-wills/special_account/verify_update/<str:token>/',
+        views.verify_special_account_update,
+        name='verify_special_account_update'
+    ),
+
 
     path('digital-wills/asset/update/<str:asset_id>/',views.digitalwillUpdateAssetview, name="digitalwillupdateasset"),
     path('digital-wills/asset/delete/<str:asset_id>/',views.digitalwillDeleteAssetview, name="digitalwilldeleteteasset"),
+
 ]

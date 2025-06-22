@@ -15,6 +15,9 @@ from reportlab.platypus import Image as RLImage
 from reportlab.lib.utils import ImageReader
 import os
 from utils import *
+import uuid
+from django.core.signing import Signer
+from django.core.files.base import ContentFile
 
 signer = TimestampSigner()
 TOKEN_EXPIRY_SECONDS = 86400  # 1 day
@@ -345,6 +348,64 @@ def verify_audio(request, token):
     messages.success(request, "Audio instruction uploaded successfully.")
     return redirect("administration:digitalwill")
 
+def verify_asset_update(request, token):
+    try:
+        signer.unsign(token)
+    except BadSignature:
+        messages.error(request, "Invalid or expired token.")
+        return redirect("administration:digitalwill")
+
+    data = request.session.get("pending_asset_update")
+    if not data:
+        messages.error(request, "No pending asset update found.")
+        return redirect("administration:digitalwill")
+
+    testator = UserProfile.objects.filter(user=request.user).first()
+    asset = get_object_or_404(Asset, id=data['asset_id'], testator=testator)
+
+    # Update asset fields
+    asset.asset_type = data['asset_type']
+    asset.location = data['location']
+    asset.estimated_value = data['estimated_value']
+    asset.instruction = data['instruction']
+
+    if data['asset_image_content']:
+        image_file = ContentFile(data['asset_image_content'].encode('latin1'), name=data['asset_image_name'])
+        asset.asset_image = image_file
+
+    asset.save()
+    asset.assigned_to.set(Heir.objects.filter(id__in=data['assigned_to_ids']))
+
+    # Clean session
+    request.session.pop("pending_asset_update", None)
+
+    messages.success(request, "Asset was updated after verification.")
+    return redirect("administration:digitalwill")
+
+def verify_asset_delete(request, token):
+    try:
+        signer.unsign(token)
+    except BadSignature:
+        messages.error(request, "Invalid or expired verification token.")
+        return redirect("administration:digitalwill")
+
+    data = request.session.get("pending_asset_delete")
+    if not data:
+        messages.error(request, "No pending deletion request found.")
+        return redirect("administration:digitalwill")
+
+    testator = UserProfile.objects.filter(user=request.user).first()
+    asset = Asset.objects.filter(id=data["asset_id"], testator=testator).first()
+
+    if asset:
+        asset.delete()
+        messages.success(request, f"Asset '{data['asset_type']}' was successfully deleted after verification.")
+    else:
+        messages.warning(request, "Asset already deleted or does not exist.")
+
+    request.session.pop("pending_asset_delete", None)
+    return redirect("administration:digitalwill")
+
 def dashboardview(request):
     templates = "administration/dashboard.html"
     context = {}
@@ -359,11 +420,13 @@ def digitalwillview(request):
     assets = Asset.objects.filter(testator = userprofile)
     asset_instance = Asset.objects.filter(testator = userprofile).first()
     special_accounts = SpecialAccount.objects.filter(testator = userprofile)
+    
     confidential_infos = ConfidentialInfo.objects.filter(testator = userprofile)
     post_death_instructions = PostDeathInstruction.objects.filter(testator = userprofile)
     audio_instructions = AudioInstruction.objects.filter(testator = userprofile)
     executors = Executor.objects.filter(testator = userprofile)
     heir = Heir.objects.filter(id = request.POST.get("assigned_to")).first()
+    special_account_instance = SpecialAccount.objects.filter(id = request.POST.get("special_account_id")).first()
 
     if request.method == "POST" and "add_heir_btn" in request.POST:
         heir_form = HeirForm(request.POST)
@@ -645,22 +708,6 @@ def digitalwillview(request):
 
         messages.error(request, "Please correct the form errors.")
         return redirect("administration:digitalwill")
-
-    # if request.method == "POST" and "add_audio_instruction_btn" in request.POST:
-    #     audio_instruction_form = AudioInstructionForm(request.POST or None, request.FILES or None)
-    #     if audio_instruction_form.is_valid():
-    #         # if Asset.objects.filter(full_name = request.POST.get("full_name")).exists():
-    #         #    messages.info(request, f"Heir is already exists")
-    #         #    return redirect("administration:digitalwill")
-            
-    #         audio_instruction_form_instance = audio_instruction_form.save(commit=False)
-    #         audio_instruction_form_instance.testator = userprofile
-    #         audio_instruction_form_instance.save()
-    #         messages.success(request, f"Audio instruction was added successfully!")
-    #         return redirect("administration:digitalwill")
-            
-    #     messages.error(request, f"Something went wrong, invalid credential!")
-    #     return redirect("administration:digitalwill")
     
     special_account_form = SpecialAccountForm()
     confidential_info_form = ConfidentialInfoForm()
@@ -668,7 +715,8 @@ def digitalwillview(request):
     post_death_instruction_form = PostDeathInstructionForm()
     audio_instruction_form = AudioInstructionForm()
     asset_form = AssetForm()
-    asset_form_instance = AssetForm(instance = asset_instance) 
+    asset_form_instance = AssetForm(instance = asset_instance)
+    special_account_form_instance = SpecialAccountForm(instance = special_account_instance)
     her_form = HeirForm()
     templates = "administration/digital_will.html"
     context = {
@@ -681,6 +729,7 @@ def digitalwillview(request):
         "heirs":heirs,
         "asset_form":asset_form,
         "asset_form_instance":asset_form_instance,
+        "special_account_form_instance":special_account_form_instance,
 
         "assets":assets,
         "special_accounts":special_accounts,
@@ -709,28 +758,197 @@ def digitalwillDeleteHeirview(request, heir_id):
         heir.delete()
         messages.success(request, f"Heir information was deleted successfully!")
         return redirect("administration:digitalwill")
-    
+
+signer = Signer()    
 def digitalwillUpdateAssetview(request, asset_id):
     if request.method == "POST" and "update_asset_btn" in request.POST:
-        testator = UserProfile.objects.filter(user = request.user).first()
-        asset = Asset.objects.filter(id = asset_id).first()
-        asset_form = AssetForm(request.POST or None, request.FILES or None, instance = asset)
+        testator = UserProfile.objects.filter(user=request.user).first()
+        asset = get_object_or_404(Asset, id=asset_id, testator=testator)
+
+        asset_form = AssetForm(request.POST, request.FILES, instance=asset)
         if asset_form.is_valid():
-            asset_form_instance = asset_form.save(commit=False)
-            asset_form_instance.testator = testator
-            asset_form_instance.asset_type = request.POST.get("asset_type")
-            asset_form_instance.location = request.POST.get("location")
-            asset_form_instance.estimated_value = request.POST.get("estimated_value")
-            asset_form_instance.asset_image = request.POST.get("asset_image")
-            asset_form_instance.instruction = request.POST.get("instruction")
+            # Store cleaned data in session
+            request.session['pending_asset_update'] = {
+                'asset_id': str(asset.id),
+                'asset_type': asset_form.cleaned_data['asset_type'],
+                'location': asset_form.cleaned_data['location'],
+                'estimated_value': str(asset_form.cleaned_data['estimated_value'] or ''),
+                'instruction': asset_form.cleaned_data['instruction'] or '',
+                'assigned_to_ids': [str(heir.id) for heir in asset_form.cleaned_data['assigned_to']],
+                'asset_image_name': request.FILES.get('asset_image').name if request.FILES.get('asset_image') else '',
+                'asset_image_content': request.FILES.get('asset_image').read().decode('latin1') if request.FILES.get('asset_image') else '',
+                'asset_image_type': request.FILES.get('asset_image').content_type if request.FILES.get('asset_image') else '',
+            }
 
-            asset_form_instance.save()
-            messages.success(request, f"Asset information was updated successfully!")
-            return redirect("administration:digitalwill")
+            # Generate secure token
+            token = signer.sign(str(uuid.uuid4()))
+            verification_url = request.build_absolute_uri(
+                reverse("administration:verify_asset_update", kwargs={"token": token})
+            )
 
+            # Optional: Generate PDF
+            # pdf = generate_asset_update_pdf(request.session['pending_asset_update'], testator.full_name)
+
+            # Send verification email
+            email = EmailMessage(
+                subject="Confirm Asset Update",
+                body=f"You requested to update asset: {asset.asset_type}. Confirm the update:\n{verification_url}",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[request.user.email],
+            )
+            # email.attach("asset_update_summary.pdf", pdf.getvalue(), "application/pdf")  # optional
+            email.send()
+
+            messages.info(request, "A confirmation email has been sent. Please verify to apply changes.")
+        else:
+            messages.error(request, f"Asset update failed: {asset_form.errors.as_text()}")
+
+        return redirect("administration:digitalwill")
+    
 def digitalwillDeleteAssetview(request, asset_id):
     if request.method == "POST" and "delete_asset_btn" in request.POST:
-        heir = Asset.objects.filter(id = asset_id).first()
-        heir.delete()
-        messages.success(request, f"Asset information was deleted successfully!")
+        testator = UserProfile.objects.filter(user=request.user).first()
+        asset = get_object_or_404(Asset, id=asset_id, testator=testator)
+
+        # Store for verification
+        request.session["pending_asset_delete"] = {
+            "asset_id": str(asset.id),
+            "asset_type": asset.asset_type,
+            "location": asset.location,
+            "estimated_value": str(asset.estimated_value or ''),
+            "instruction": asset.instruction or '',
+            "asset_image_name": asset.asset_image.name if asset.asset_image else '',
+        }
+
+        token = signer.sign(str(uuid.uuid4()))
+        verification_url = request.build_absolute_uri(
+            reverse("administration:verify_asset_delete", kwargs={"token": token})
+        )
+
+        # Generate PDF summary
+        pdf = generate_asset_delete_pdf(request.session["pending_asset_delete"], testator.full_name)
+
+        # Prepare email
+        email = EmailMessage(
+            subject="Confirm Asset Deletion",
+            body=(
+                f"You requested to delete the asset: {asset.asset_type}.\n\n"
+                f"Click to confirm: {verification_url}"
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[request.user.email],
+        )
+        email.attach("asset_deletion_summary.pdf", pdf.getvalue(), "application/pdf")
+
+        # Attach image if exists
+        if asset.asset_image:
+            with asset.asset_image.open("rb") as img:
+                email.attach(asset.asset_image.name, img.read(), asset.asset_image.file.content_type)
+
+        email.send()
+        messages.info(request, "A confirmation email with asset summary was sent. Please verify to delete.")
         return redirect("administration:digitalwill")
+    
+def digitalwillUpdateSpecialAccountview(request, special_account_id):
+    # Get UserProfile for the logged-in user (your 'testator')
+    testator = UserProfile.objects.filter(user=request.user).first()
+    special_account = get_object_or_404(SpecialAccount, id=special_account_id, testator=testator)
+
+    if request.method == "POST" and "update_special_account_btn" in request.POST:
+        form = SpecialAccountForm(request.POST, instance=special_account)
+
+        if form.is_valid():
+            cleaned = form.cleaned_data
+
+            # Prepare pending update dict to store in session
+            pending_update = {
+                'special_account_id': str(special_account.id),
+                'account_type': cleaned.get('account_type', ''),
+                'account_name': cleaned.get('account_name', ''),
+                'account_number': cleaned.get('account_number', ''),
+                'assigned_to_id': str(cleaned['assigned_to'].id) if cleaned.get('assigned_to') else '',
+            }
+
+            request.session['pending_special_account_update'] = pending_update
+
+            # Generate signed token for email verification link
+            token = signer.sign(str(uuid.uuid4()))
+            verification_url = request.build_absolute_uri(
+                reverse("administration:verify_special_account_update", kwargs={"token": token})
+            )
+
+            # Save token in session (or DB if preferred)
+            request.session['special_account_update_token'] = token
+
+            # Send verification email
+            email_body = f"""
+                Dear {request.user.get_full_name()},<br><br>
+                You requested to update your Special Account.<br>
+                Please verify the changes by clicking the link below:<br>
+                <a href="{verification_url}" style="padding:10px 15px; background:#28a745; color:#fff; text-decoration:none;">Verify Account Update</a><br><br>
+                If you did not request this, please ignore this email.<br><br>
+                Thanks,<br>Your Team
+            """
+
+            email = EmailMessage(
+                subject="Verify Your Special Account Update",
+                body=email_body,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[request.user.email],
+            )
+            email.content_subtype = "html"  # Important for HTML email
+            email.send()
+
+            messages.info(request, "A verification email has been sent. Please verify to apply the update.")
+            return redirect("administration:digitalwill")
+        else:
+            messages.error(request, f"Update failed: {form.errors.as_text()}")
+            return redirect("administration:digitalwill")
+
+    return redirect("administration:digitalwill")
+
+def verify_special_account_update(request, token):
+    try:
+        unsigned_token = signer.unsign(token)
+    except BadSignature:
+        messages.error(request, "Invalid or expired verification token.")
+        return redirect("administration:digitalwill")
+
+    session_token = request.session.get('special_account_update_token')
+    if not session_token or session_token != token:
+        messages.error(request, "Verification token mismatch or expired.")
+        return redirect("administration:digitalwill")
+
+    pending_update = request.session.get('pending_special_account_update')
+    if not pending_update:
+        messages.error(request, "No pending update found.")
+        return redirect("administration:digitalwill")
+
+    # Fetch the SpecialAccount
+    testator = UserProfile.objects.filter(user=request.user).first()
+    special_account = get_object_or_404(
+        SpecialAccount,
+        id=pending_update['special_account_id'],
+        testator=testator
+    )
+
+    # Apply updates
+    special_account.account_type = pending_update.get('account_type', '')
+    special_account.account_name = pending_update.get('account_name', '')
+    special_account.account_number = pending_update.get('account_number', '')
+
+    assigned_to_id = pending_update.get('assigned_to_id')
+    if assigned_to_id:
+        assigned_to_heir = Heir.objects.filter(id=assigned_to_id).first()
+        special_account.assigned_to = assigned_to_heir
+    else:
+        special_account.assigned_to = None
+
+    special_account.save()
+
+    # Clear session data
+    del request.session['pending_special_account_update']
+    del request.session['special_account_update_token']
+
+    messages.success(request, "Special Account successfully updated after verification.")
+    return redirect("administration:digitalwill")
