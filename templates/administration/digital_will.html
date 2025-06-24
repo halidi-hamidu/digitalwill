@@ -178,8 +178,8 @@
                                         <td>{{special_account.assigned_to}}</td>
                                         <td>
                                             <a href="" data-bs-toggle="modal" data-bs-target="#updateSpecialAccountModel{{special_account.id}}"><i class="bi bi-pencil-square"></i></a>
-                                            <a href=""><i class="bi bi-trash"></i></a>
-                                            <a href=""><i class="bi bi-eye"></i></a>
+                                            <a href="" data-bs-toggle="modal" data-bs-target="#deleteSpecialAccountModel{{ special_account.id }}"><i class="bi bi-trash"></i></a>
+                                            <a href="" data-bs-toggle="offcanvas" data-bs-target="#specialAccountDetailsViewoffcanvas{{special_account.id}}"><i class="bi bi-eye"></i></a>
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -221,9 +221,9 @@
                                         <td>{{confidential_info.confidential_file}}</td>
                                         <td>{{confidential_info.assigned_to}}</td>
                                         <td>
-                                            <a href=""><i class="bi bi-pencil-square"></i></a>
-                                            <a href=""><i class="bi bi-trash"></i></a>
-                                            <a href=""><i class="bi bi-eye"></i></a>
+                                            <a href="" data-bs-toggle="modal" data-bs-target="#updateConfidentialInfoModel{{confidential_info.id}}"><i class="bi bi-pencil-square"></i></a>
+                                            <a href="" data-bs-toggle="modal" data-bs-target="#deleteSpecialConfidentialInfoModel{{ confidential_info.id }}"><i class="bi bi-trash"></i></a>
+                                            <a href="" data-bs-toggle="offcanvas" data-bs-target="#confidentialInfoDetailsViewoffcanvas{{confidential_info.id}}"><i class="bi bi-eye"></i></a>
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -265,9 +265,9 @@
                                         <td>{{executor.relationship}}</td>
                                         <td>{{executor.phone_number}}</td>
                                         <td>
-                                            <a href=""><i class="bi bi-pencil-square"></i></a>
-                                            <a href=""><i class="bi bi-trash"></i></a>
-                                            <a href=""><i class="bi bi-eye"></i></a>
+                                            <a href="" data-bs-toggle="modal" data-bs-target="#updateExecutorModel{{executor.id}}"><i class="bi bi-pencil-square"></i></a>
+                                            <a href="" data-bs-toggle="modal" data-bs-target="#deleteExecutorModel{{ executor.id }}"><i class="bi bi-trash"></i></a>
+                                            <a href="" data-bs-toggle="offcanvas" data-bs-target="#executorDetailsViewoffcanvas{{executor.id}}"><i class="bi bi-eye"></i></a>
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -305,8 +305,8 @@
                                         <td>{{post_death_instruction.testator}}</td>
                                         <td>{{post_death_instruction.instructions}}</td>
                                         <td>
-                                            <a href=""><i class="bi bi-pencil-square"></i></a>
-                                            <a href=""><i class="bi bi-trash"></i></a>
+                                            <a href="" data-bs-toggle="modal" data-bs-target="#updatepost_death_instructionModel{{post_death_instruction.id}}"><i class="bi bi-pencil-square"></i></a>
+                                            <a href="" data-bs-toggle="modal" data-bs-target="#deletepost_death_instructionModel{{ post_death_instruction.id }}"><i class="bi bi-trash"></i></a>
                                             <a href=""><i class="bi bi-eye"></i></a>
                                         </td>
                                     </tr>
@@ -378,19 +378,19 @@
                     {% csrf_token %}
                     <div class="mb-2 form-group">
                         <label for="">Fullname</label>
-                        {% render_field her_form.full_name name="full_name" class="form-control input-sm" %}
+                        {% render_field heir_form.full_name name="full_name" class="form-control input-sm" %}
                     </div>
                     <div class="mb-2 form-group">
                         <label for="">Relationship</label>
-                        {% render_field her_form.relationship name="relationship" class="form-control input-sm" %}
+                        {% render_field heir_form.relationship name="relationship" class="form-control input-sm" %}
                     </div>
                     <div class="mb-2 form-group">
                         <label for="">Date of Birth (DoB)</label>
-                        {% render_field her_form.date_of_birth type="date" name="date_of_birth" class="form-control input-sm" %}
+                        {% render_field heir_form.date_of_birth type="date" name="date_of_birth" class="form-control input-sm" %}
                     </div>
                     <div class="mb-2 form-group">
                         <label for="">Phonenumber</label>
-                        {% render_field her_form.phone_number name="phone_number" class="form-control input-sm" %}
+                        {% render_field heir_form.phone_number name="phone_number" class="form-control input-sm" %}
                     </div>
                     <div class="form-roup d-flex justify-content-end gap-2">
                         <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -976,42 +976,38 @@
 {% endfor %}
 {% endif %}
 
-{% if assets %}
-{% for asset in assets %}
-<div class="modal fade" id="deleteAssetModel{{asset.id}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteAssetModel{{asset.id}}Label" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5" id="deleteAssetModel{{asset.id}}Label">Delete Asset</h1>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div class="profile_update_form">
-            <form action="{% url 'administration:digitalwilldeleteteasset' asset.id %}" method="POST" autocomplete="off" enctype="multipart/form-data">
+{% if special_accounts %}
+  {% for special_account in special_accounts %}
+    <div class="modal fade" id="deleteSpecialAccountModel{{ special_account.id }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteSpecialAccountModel{{ special_account.id }}Label" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="deleteSpecialAccountModel{{ special_account.id }}Label">Delete Special Account</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="profile_update_form">
+              <form action="{% url 'administration:deletespecialaccount' special_account.id %}" method="POST">
                 {% csrf_token %}
-
-                <div class="mb-2 form-group">
-                    Are you sure you want to delete this asset ?
-                    <input type="hidden" name="heir_id" class="form-control input-sm" value="{{ heir.id }}">
+                <p>Are you sure you want to delete this special account?</p>
+                <div class="form-group d-flex justify-content-end gap-2">
+                  <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                  <button type="submit" name="delete_special_account_btn" class="btn btn-sm btn-danger">Delete</button>
                 </div>
-                <div class="form-roup d-flex justify-content-end gap-2">
-                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" name="delete_asset_btn" class="btn btn-sm btn-danger"> Delete</button>
-                </div>
-            </form>
+              </form>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
-{% endfor %}
+  {% endfor %}
 {% endif %}
 
-{% if assets %}
-{% for asset in assets %}
-<div class="offcanvas offcanvas-end w-50" data-bs-backdrop="static" tabindex="-1" id="assetDetailsViewoffcanvas{{asset.id}}" aria-labelledby="assetDetailsViewoffcanvas{{asset.id}}Label">
+{% if special_accounts %}
+{% for special_account in special_accounts %}
+<div class="offcanvas offcanvas-end w-50" data-bs-backdrop="static" tabindex="-1" id="specialAccountDetailsViewoffcanvas{{special_account.id}}" aria-labelledby="specialAccountDetailsViewoffcanvas{{special_account.id}}Label">
   <div class="offcanvas-header">
-    <h5 class="offcanvas-title" id="assetDetailsViewoffcanvas{{asset.id}}Label">Asset informations</h5>
+    <h5 class="offcanvas-title" id="specialAccountDetailsViewoffcanvas{{special_account.id}}Label">Special account informations</h5>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
   <div class="offcanvas-body">
@@ -1029,39 +1025,560 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td>Name : </td><td>{{asset.testator.user.first_name}} {{asset.testator.user.last_name}}</td>
-                            <td>Gender : </td><td>{{asset.testator.gender}}</td>
+                            <td>Name : </td><td>{{special_account.testator.user.first_name}} {{special_account.testator.user.last_name}}</td>
+                            <td>Gender : </td><td>{{special_account.testator.gender}}</td>
                         </tr>
                         <tr>
-                            <td>Date of Birth : </td><td>{{asset.testator.date_of_birth}}</td>
-                            <td>Phonenumber: </td><td>{{asset.testator.phone_number}}</td>
+                            <td>Date of Birth : </td><td>{{special_account.testator.date_of_birth}}</td>
+                            <td>Phonenumber: </td><td>{{special_account.testator.phone_number}}</td>
                         </tr>
                         <tr>
-                            <td>Email : </td><td>{{asset.testator.user.username}}</td>
-                            <td>Nida Number: </td><td>{{asset.testator.nida_number}}</td>
+                            <td>Email : </td><td>{{special_account.testator.user.username}}</td>
+                            <td>Nida Number: </td><td>{{special_account.testator.nida_number}}</td>
                         </tr>
                         <tr>
-                            <td>Address : </td><td>{{asset.testator.address}}</td>
+                            <td>Address : </td><td>{{special_account.testator.address}}</td>
                         </tr>
                     </tbody>
                     <thead class="table-warning">
                         <tr>
-                            <th colspan="4">Asset informations</th>
+                            <th colspan="4">Special account informations</th>
                         </tr>
                     </thead>
                     <tbody>
-                        
                         <tr>
-                            <td>Asset Type : </td><td>{{asset.asset_type}}</td>
-                            <td>Location : </td><td>{{asset.location}}</td>
+                            <td>Account Type : </td><td>{{special_account.account_type}}</td>
+                            <td>Account Name : </td><td>{{special_account.account_name}}</td>
                         </tr>
                         <tr>
-                            <td>Estimated Value : </td><td>{{asset.estimated_value}}</td>
-                            <td>Asset Image: </td><td><a href="{{asset.asset_image.urls}}">{{asset.asset_image.name}}</a></td>
+                            <td>Account Number : </td><td>{{special_account.account_number}}</td>
+                            <td>Assigned To: </td><td>{{special_account.assigned_to}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Update, Delete, View Confidential Information Modal -->
+{% if confidential_infos %}
+{% for confidential_info in confidential_infos %}
+<div class="modal fade" id="updateConfidentialInfoModel{{confidential_info.id}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="updateConfidentialInfoModel{{confidential_info.id}}Label" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="updateConfidentialInfoModel{{confidential_info.id}}Label">Update Confidential Info</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="profile_update_form">
+            <form action="{% url 'administration:update_confidential_info' confidential_info.id %}" method="POST" autocomplete="off" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="mb-2 form-group">
+                    <label for="">Instruction</label>
+                    <input type="hidden" name="confidential_info_id" value="{{confidential_info.id}}">
+                    {% render_field confidential_info_form_instance.instructions name="instructions" class="form-control input-sm" rows="3" %}
+                </div>
+                <div class="mb-2 form-group">
+                    <label for="">Confidential File</label>
+                    {% render_field confidential_info_form_instance.confidential_file name="confidential_file" class="form-control input-sm" rows="3" %}
+                </div>
+                <div class="mb-2 form-group">
+                    <label for="">Assigned To</label>
+                    {% render_field confidential_info_form_instance.assigned_to name="assigned_to" class="form-control input-sm" %}
+                </div>
+                <div class="form-roup d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" name="update_confidential_info_btn" class="btn btn-sm edit-btn"> Update Confidential Info</button>
+                </div>
+            </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if confidential_infos %}
+{% for confidential_info in confidential_infos %}
+    <div class="modal fade" id="deleteSpecialConfidentialInfoModel{{ confidential_info.id }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteSpecialConfidentialInfoModel{{ confidential_info.id }}Label" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="deleteSpecialConfidentialInfoModel{{ confidential_info.id }}Label">Delete Confidential Info</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="profile_update_form">
+              <form action="{% url 'administration:request_delete_confidential_info' confidential_info.id %}" method="POST">
+                {% csrf_token %}
+                <p>Are you sure you want to delete this confidential info?</p>
+                <div class="form-group d-flex justify-content-end gap-2">
+                  <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                  <button type="submit" name="delete_confidential_info_btn" class="btn btn-sm btn-danger">Delete</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+{% endif %}
+
+{% if confidential_infos %}
+{% for confidential_info in confidential_infos %}
+<div class="offcanvas offcanvas-end w-100" data-bs-backdrop="static" tabindex="-1" id="confidentialInfoDetailsViewoffcanvas{{confidential_info.id}}" aria-labelledby="confidentialInfoDetailsViewoffcanvas{{confidential_info.id}}Label">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="confidentialInfoDetailsViewoffcanvas{{confidential_info.id}}Label">Confidential informations</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <div>
+        <div class="profile_inner_content">
+            <p class="text-success">
+                Please review your details below to ensure everything is accurate before proceeding.
+            </p>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped123">
+                    <thead class="table-info">
+                        <tr>
+                            <th colspan="4">Testator informations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Name : </td><td>{{confidential_info.testator.user.first_name}} {{confidential_info.testator.user.last_name}}</td>
+                            <td>Gender : </td><td>{{confidential_info.testator.gender}}</td>
                         </tr>
                         <tr>
-                            <td>Instruction : </td><td>{{asset.instruction}}</td>
-                            <td>Assigned To: </td><td>{{asset.assigned_to}}</td>
+                            <td>Date of Birth : </td><td>{{confidential_info.testator.date_of_birth}}</td>
+                            <td>Phonenumber: </td><td>{{confidential_info.testator.phone_number}}</td>
+                        </tr>
+                        <tr>
+                            <td>Email : </td><td>{{confidential_info.testator.user.username}}</td>
+                            <td>Nida Number: </td><td>{{confidential_info.testator.nida_number}}</td>
+                        </tr>
+                        <tr>
+                            <td>Address : </td><td>{{confidential_info.testator.address}}</td>
+                        </tr>
+                    </tbody>
+                    <thead class="table-warning">
+                        <tr>
+                            <th colspan="4">Confidential informations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>instructions : </td><td>{{confidential_info.instructions}}</td>
+                            <td>confidential_file : </td><td><a href="{{confidential_info.confidential_file.urls}}">{{confidential_info.confidential_file.name}}</a></td>
+                        </tr>
+                        <tr>
+                            <td>assigned_to : </td><td>
+                                {% if confidential_info.assigned_to %}
+                                    <ul>
+                                        {% for assignee in confidential_info.assigned_to.all %}                                        
+                                            <li>{{assignee.full_name}} as {{assignee.relationship}}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Update, Delete, View Executor Information Modal -->
+{% if executors %}
+{% for executor in executors %}
+<div class="modal fade" id="updateExecutorModel{{executor.id}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="updateExecutorModel{{executor.id}}Label" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="updateExecutorModel{{executor.id}}Label">Update Executor</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="profile_update_form">
+            <form action="{% url 'administration:request_update_executor' executor.id %}" method="POST" autocomplete="off" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="executor_id" value="{{executor.id}}">
+                <div class="mb-2 form-group">
+                    <label for="">Fullname</label>
+                    {% render_field executor_form_instance.full_name name="full_name" class="form-control input-sm" rows="3" %}
+                </div>
+                <div class="mb-2 form-group">
+                    <label for="">Relationship</label>
+                    {% render_field executor_form_instance.relationship name="relationship" class="form-control input-sm" rows="3" %}
+                </div>
+                <div class="mb-2 form-group">
+                    <label for="">Phonenumber</label>
+                    {% render_field executor_form_instance.phone_number name="phone_number" class="form-control input-sm" %}
+                </div>
+                <div class="form-roup d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" name="update_executor_btn" class="btn btn-sm edit-btn"> Update Executor</button>
+                </div>
+            </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if executors %}
+{% for executor in executors %}
+    <div class="modal fade" id="deleteExecutorModel{{ executor.id }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteExecutorModel{{ executor.id }}Label" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="deleteExecutorModel{{ executor.id }}Label">Delete Executor</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="profile_update_form">
+              <form action="" method="POST">
+                {% csrf_token %}
+                <p>Are you sure you want to delete this executor ?</p>
+                <div class="form-group d-flex justify-content-end gap-2">
+                  <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                  <button type="submit" name="delete_executor_btn" class="btn btn-sm btn-danger">Delete</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+{% endif %}
+
+{% if executors %}
+{% for executor in executors %}
+<div class="offcanvas offcanvas-end w-50" data-bs-backdrop="static" tabindex="-1" id="executorDetailsViewoffcanvas{{executor.id}}" aria-labelledby="executorDetailsViewoffcanvas{{executor.id}}Label">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="executorDetailsViewoffcanvas{{executor.id}}Label">Executor informations</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <div>
+        <div class="profile_inner_content">
+            <p class="text-success">
+                Please review your details below to ensure everything is accurate before proceeding.
+            </p>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped123">
+                    <thead class="table-info">
+                        <tr>
+                            <th colspan="4">Testator informations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Name : </td><td>{{executor.testator.user.first_name}} {{executor.testator.user.last_name}}</td>
+                            <td>Gender : </td><td>{{executor.testator.gender}}</td>
+                        </tr>
+                        <tr>
+                            <td>Date of Birth : </td><td>{{executor.testator.date_of_birth}}</td>
+                            <td>Phonenumber: </td><td>{{executor.testator.phone_number}}</td>
+                        </tr>
+                        <tr>
+                            <td>Email : </td><td>{{executor.testator.user.username}}</td>
+                            <td>Nida Number: </td><td>{{executor.testator.nida_number}}</td>
+                        </tr>
+                        <tr>
+                            <td>Address : </td><td>{{executor.testator.address}}</td>
+                        </tr>
+                    </tbody>
+                    <thead class="table-warning">
+                        <tr>
+                            <th colspan="4">Executor informations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Full Name : </td><td>{{executor.full_name}}</td>
+                            <td>Relationship : </td><td>{{executor.relationship}}</td>
+                        </tr>
+                        <tr>
+                            <td>PhoneNumber : </td><td>{{executor.phone_number}}<td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Update, Delete, View Post Death Instruction Modal -->
+{% if post_death_instructions %}
+{% for post_death_instruction in post_death_instructions %}
+<div class="modal fade" id="updatepost_death_instructionModel{{post_death_instruction.id}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="updatepost_death_instructionModel{{post_death_instruction.id}}Label" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="updatepost_death_instructionModel{{post_death_instruction.id}}Label">Update Post Death Instruction</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="profile_update_form">
+            <form action="{% url 'administration:request_update_post_death' post_death_instruction.id %}" method="POST" autocomplete="off" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="mb-2 form-group">
+                    <label for="">Instructions</label>
+                    {% render_field post_death_instruction_form_instance.instructions name="instructions" class="form-control input-sm" rows="3" %}
+                </div>
+                <div class="form-roup d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" name="update_post_death_instruction_btn" class="btn btn-sm edit-btn"> Update Post Death Instruction</button>
+                </div>
+            </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if post_death_instructions %}
+{% for post_death_instruction in post_death_instructions %}
+    <div class="modal fade" id="deletepost_death_instructionModel{{ post_death_instruction.id }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="deletepost_death_instructionModel{{ post_death_instruction.id }}Label" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="deletepost_death_instructionModel{{ post_death_instruction.id }}Label">Delete Post Death Instruction</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="profile_update_form">
+              <form action="{% url 'administration:request_delete_audio_instruction' post_death_instruction.id %}" method="POST">
+                {% csrf_token %}
+                <p>Are you sure you want to delete this post death instruction ?</p>
+                <div class="form-group d-flex justify-content-end gap-2">
+                  <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                  <button type="submit" name="delete_post_death_instruction_btn" class="btn btn-sm btn-danger">Delete</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+{% endif %}
+
+{% if confidential_infos %}
+{% for confidential_info in confidential_infos %}
+<div class="offcanvas offcanvas-end w-100" data-bs-backdrop="static" tabindex="-1" id="confidentialInfoDetailsViewoffcanvas{{confidential_info.id}}" aria-labelledby="confidentialInfoDetailsViewoffcanvas{{confidential_info.id}}Label">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="confidentialInfoDetailsViewoffcanvas{{confidential_info.id}}Label">Confidential informations</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <div>
+        <div class="profile_inner_content">
+            <p class="text-success">
+                Please review your details below to ensure everything is accurate before proceeding.
+            </p>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped123">
+                    <thead class="table-info">
+                        <tr>
+                            <th colspan="4">Testator informations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Name : </td><td>{{confidential_info.testator.user.first_name}} {{confidential_info.testator.user.last_name}}</td>
+                            <td>Gender : </td><td>{{confidential_info.testator.gender}}</td>
+                        </tr>
+                        <tr>
+                            <td>Date of Birth : </td><td>{{confidential_info.testator.date_of_birth}}</td>
+                            <td>Phonenumber: </td><td>{{confidential_info.testator.phone_number}}</td>
+                        </tr>
+                        <tr>
+                            <td>Email : </td><td>{{confidential_info.testator.user.username}}</td>
+                            <td>Nida Number: </td><td>{{confidential_info.testator.nida_number}}</td>
+                        </tr>
+                        <tr>
+                            <td>Address : </td><td>{{confidential_info.testator.address}}</td>
+                        </tr>
+                    </tbody>
+                    <thead class="table-warning">
+                        <tr>
+                            <th colspan="4">Confidential informations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>instructions : </td><td>{{confidential_info.instructions}}</td>
+                            <td>confidential_file : </td><td><a href="{{confidential_info.confidential_file.urls}}">{{confidential_info.confidential_file.name}}</a></td>
+                        </tr>
+                        <tr>
+                            <td>assigned_to : </td><td>
+                                {% if confidential_info.assigned_to %}
+                                    <ul>
+                                        {% for assignee in confidential_info.assigned_to.all %}                                        
+                                            <li>{{assignee.full_name}} as {{assignee.relationship}}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Update, Delete, View Audio Instruction Modal -->
+{% if confidential_infos %}
+{% for confidential_info in confidential_infos %}
+<div class="modal fade" id="updateConfidentialInfoModel{{confidential_info.id}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="updateConfidentialInfoModel{{confidential_info.id}}Label" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="updateConfidentialInfoModel{{confidential_info.id}}Label">Update Confidential Info</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="profile_update_form">
+            <form action="{% url 'administration:update_confidential_info' confidential_info.id %}" method="POST" autocomplete="off" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="mb-2 form-group">
+                    <label for="">Instruction</label>
+                    <input type="hidden" name="confidential_info_id" value="{{confidential_info.id}}">
+                    {% render_field confidential_info_form_instance.instructions name="instructions" class="form-control input-sm" rows="3" %}
+                </div>
+                <div class="mb-2 form-group">
+                    <label for="">Confidential File</label>
+                    {% render_field confidential_info_form_instance.confidential_file name="confidential_file" class="form-control input-sm" rows="3" %}
+                </div>
+                <div class="mb-2 form-group">
+                    <label for="">Assigned To</label>
+                    {% render_field confidential_info_form_instance.assigned_to name="assigned_to" class="form-control input-sm" %}
+                </div>
+                <div class="form-roup d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" name="update_confidential_info_btn" class="btn btn-sm edit-btn"> Update Confidential Info</button>
+                </div>
+            </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if confidential_infos %}
+{% for confidential_info in confidential_infos %}
+    <div class="modal fade" id="deleteSpecialConfidentialInfoModel{{ confidential_info.id }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteSpecialConfidentialInfoModel{{ confidential_info.id }}Label" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="deleteSpecialConfidentialInfoModel{{ confidential_info.id }}Label">Delete Confidential Info</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="profile_update_form">
+              <form action="{% url 'administration:request_delete_confidential_info' confidential_info.id %}" method="POST">
+                {% csrf_token %}
+                <p>Are you sure you want to delete this confidential info?</p>
+                <div class="form-group d-flex justify-content-end gap-2">
+                  <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                  <button type="submit" name="delete_confidential_info_btn" class="btn btn-sm btn-danger">Delete</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+{% endif %}
+
+{% if confidential_infos %}
+{% for confidential_info in confidential_infos %}
+<div class="offcanvas offcanvas-end w-100" data-bs-backdrop="static" tabindex="-1" id="confidentialInfoDetailsViewoffcanvas{{confidential_info.id}}" aria-labelledby="confidentialInfoDetailsViewoffcanvas{{confidential_info.id}}Label">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="confidentialInfoDetailsViewoffcanvas{{confidential_info.id}}Label">Confidential informations</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <div>
+        <div class="profile_inner_content">
+            <p class="text-success">
+                Please review your details below to ensure everything is accurate before proceeding.
+            </p>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped123">
+                    <thead class="table-info">
+                        <tr>
+                            <th colspan="4">Testator informations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Name : </td><td>{{confidential_info.testator.user.first_name}} {{confidential_info.testator.user.last_name}}</td>
+                            <td>Gender : </td><td>{{confidential_info.testator.gender}}</td>
+                        </tr>
+                        <tr>
+                            <td>Date of Birth : </td><td>{{confidential_info.testator.date_of_birth}}</td>
+                            <td>Phonenumber: </td><td>{{confidential_info.testator.phone_number}}</td>
+                        </tr>
+                        <tr>
+                            <td>Email : </td><td>{{confidential_info.testator.user.username}}</td>
+                            <td>Nida Number: </td><td>{{confidential_info.testator.nida_number}}</td>
+                        </tr>
+                        <tr>
+                            <td>Address : </td><td>{{confidential_info.testator.address}}</td>
+                        </tr>
+                    </tbody>
+                    <thead class="table-warning">
+                        <tr>
+                            <th colspan="4">Confidential informations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>instructions : </td><td>{{confidential_info.instructions}}</td>
+                            <td>confidential_file : </td><td><a href="{{confidential_info.confidential_file.urls}}">{{confidential_info.confidential_file.name}}</a></td>
+                        </tr>
+                        <tr>
+                            <td>assigned_to : </td><td>
+                                {% if confidential_info.assigned_to %}
+                                    <ul>
+                                        {% for assignee in confidential_info.assigned_to.all %}                                        
+                                            <li>{{assignee.full_name}} as {{assignee.relationship}}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </td>
                         </tr>
                     </tbody>
                 </table>

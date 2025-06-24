@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Confidential Info PDF</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <h2>Confidential Info Summary</h2>
+    <p><strong>Testator:</strong> {{ confidential_info.testator }}</p>
+    <p><strong>Instructions:</strong><br>{{ confidential_info.instructions }}</p>
+    <p><strong>Assigned To:</strong>
+        {% for heir in confidential_info.assigned_to.all %}
+            {{ heir.full_name }}{% if not forloop.last %}, {% endif %}
+        {% empty %}
+            None
+        {% endfor %}
+    </p>
+    <p><strong>Updated At:</strong> {{ confidential_info.updated_at }}</p>
+</body>
+</html>

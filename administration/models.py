@@ -1,6 +1,8 @@
 from django.db import models
 import uuid
 from authentication.models import *
+from django.contrib.auth.models import User
+# from django.contrib.auth import get_user_model
 
 class RelationshipChoices(models.TextChoices):
     SPOUSE = 'Spouse', 'Spouse'
@@ -18,7 +20,7 @@ class Heir(models.Model):
     choices=RelationshipChoices.choices,
     default=RelationshipChoices.OTHER
     ) 
-    date_of_birth = models.DateField()
+    date_of_birth = models.DateField(blank=True, null=True)
     phone_number = models.CharField(max_length=20)
 
     created_at = models.DateField(auto_now_add=True, blank=True, null=True)
@@ -30,6 +32,15 @@ class Heir(models.Model):
 
     def __str__(self):
         return f"{self.full_name} ({self.relationship})"
+
+class PendingHeirVerification(models.Model):
+    token = models.CharField(max_length=255, unique=True)
+    testator = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    full_name = models.CharField(max_length=255)
+    relationship = models.CharField(max_length=100)
+    date_of_birth = models.DateField()
+    phone_number = models.CharField(max_length=20)
+    created_at = models.DateTimeField(auto_now_add=True)
 
 # 3. Assets
 class Asset(models.Model):
@@ -70,6 +81,13 @@ class SpecialAccount(models.Model):
 
     def __str__(self):
         return f"{self.account_type} - {self.account_name}"
+    
+class SpecialAccountDeleteToken(models.Model):
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    special_account = models.ForeignKey('SpecialAccount', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
 
 # 5. Confidential Information
 class ConfidentialInfo(models.Model):
@@ -77,7 +95,7 @@ class ConfidentialInfo(models.Model):
     testator = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='confidential_infos')
     confidential_file = models.FileField(blank=True, null=True, upload_to="confidential_files/")
     instructions = models.TextField()
-    assigned_to = models.ForeignKey(Heir, on_delete=models.SET_NULL, blank=True, null=True, related_name='confidential_access')
+    assigned_to = models.ManyToManyField(Heir, blank=True, null=True, related_name='confidential_access')
 
     created_at = models.DateField(auto_now_add=True, blank=True, null=True)
     updated_at = models.DateField(auto_now=True, blank=True, null=True)
@@ -88,6 +106,18 @@ class ConfidentialInfo(models.Model):
 
     def __str__(self):
         return f"{self.account_type} for {self.email_or_username}"
+    
+class PendingConfidentialInfoUpdate(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    confidential_info = models.ForeignKey(ConfidentialInfo, on_delete=models.CASCADE)
+    instructions = models.TextField()
+    assigned_to = models.ManyToManyField(Heir, blank=True)
+    uploaded_file = models.FileField(upload_to='pending_confidential_files/', blank=True, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Pending update for {self.confidential_info} by {self.user}"
 
 # 6. Executor
 class Executor(models.Model):

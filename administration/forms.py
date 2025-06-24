@@ -2,6 +2,7 @@ from django import forms
 from .models import *
 
 class HeirForm(forms.ModelForm):
+    date_of_birth = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
     class Meta:
         model = Heir
         fields = "__all__"

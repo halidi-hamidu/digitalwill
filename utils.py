@@ -11,6 +11,7 @@ from django.conf import settings
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from django.core.signing import TimestampSigner
 
 def generate_pdf_from_template(template_name, context):
     template = get_template(template_name)
@@ -245,3 +246,7 @@ def generate_asset_delete_pdf(asset_data, full_name):
     p.save()
     buffer.seek(0)
     return buffer
+
+def generate_heir_verification_token(testator_id):
+    signer = TimestampSigner()
+    return signer.sign(str(testator_id))
