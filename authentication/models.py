@@ -29,6 +29,8 @@ class UserProfile(models.Model):
     profie_image = models.FileField(upload_to="userprofile/", blank=True, null=True)
     email_verified = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
+    created_at = models.DateField(auto_now_add=True, blank=True, null=True)
+    updated_at = models.DateField(auto_now=True, blank=True, null=True)
     class Meta:
         verbose_name = "UserProfile"
         verbose_name_plural = "UserProfile"

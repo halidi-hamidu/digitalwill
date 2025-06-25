@@ -32,10 +32,15 @@ from io import BytesIO
 from reportlab.pdfgen import canvas
 from django.core.signing import Signer, BadSignature
 from django.core.signing import TimestampSigner, SignatureExpired, BadSignature
+from django.views.decorators.cache import cache_control
 
 # views.py
+
 signer = TimestampSigner()
 VERIFICATION_EXPIRATION_SECONDS = 60 * 60 * 24  # 1 day
+
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def verify_email_view(request, token):
     try:
         email = signer.unsign(token, max_age=VERIFICATION_EXPIRATION_SECONDS)
@@ -50,6 +55,7 @@ def verify_email_view(request, token):
 
     return redirect("authentication:personalinformation")
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
 @login_required
 def resend_verification_email(request):
     userprofile = get_object_or_404(UserProfile, user=request.user)
@@ -77,7 +83,8 @@ def resend_verification_email(request):
     messages.success(request, "Verification email resent successfully.")
     return redirect("authentication:personalinformation")
 
-
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def verify_email(request, uidb64, token):
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
@@ -169,7 +176,8 @@ def registerview(request):
 
 
 signer = Signer()
-
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def generate_user_pdf(user, profile):
     buffer = BytesIO()
     p = canvas.Canvas(buffer)
@@ -191,7 +199,8 @@ def generate_user_pdf(user, profile):
     buffer.seek(0)
     return buffer
 
-
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def personalinformationview(request):
     userprofile_instance = get_object_or_404(UserProfile, user=request.user)
     user_instance = request.user
@@ -254,47 +263,108 @@ def personalinformationview(request):
         "userform": userform,
     })
 
+signer = Signer()  # You can use TimestampSigner if you want expiration support
 
-# def personalinformationview(request):
-#     userprofile = UserProfile.objects.filter(user = request.user).first()
-#     userprofile_instance = get_object_or_404(UserProfile, pk = userprofile.id)
-#     user_instance = get_object_or_404(User, pk = request.user.id)
-#     if request.method == "POST" and "update_user_profile_btn" in request.POST:
-#         userprofile_form = UserProfileForm(request.POST or None, request.FILES or None, instance = userprofile_instance)
-#         userform = UserForm(request.POST or None,instance=user_instance)
-#         missing_field = [field for field in userform  if field.errors]
-#         for field in missing_field:
-#             print(f"***Missing field {field.name}")
-
-#         if userprofile_form.is_valid() and userform.is_valid():
-#             userform_instance = userform.save(commit=False)
-#             userprofile_form_instance = userform.save(commit=False)
-#             userform_instance.first_name = request.POST.get("first_name")
-#             userform_instance.last_name = request.POST.get("last_name")
-
-#             userprofile_form_instance.user = user_instance
-#             userprofile_form_instance = userprofile_form.save(commit=False)
-#             userprofile_form_instance.email = user_instance.email
-#             userprofile_form_instance.full_name = userform_instance.first_name +" "+ userform_instance.last_name
-#             if UserProfile.objects.filter(nida_number = request.POST.get("nida_number")).exists():
-#                 messages.info(request, f"Nida number {request.POST.get("nida_number")} is already in used")
-#                 return redirect("authentication:personalinformation")
-            
-#             userform_instance.save()
-#             userprofile_form_instance.save()
-
-#             # messages.success(request, f"Profile updated successfully!")
-#             # return redirect("authentication:personalinformation")
+def verify_email_view(request, token):
+    try:
+        # Step 1: Decode token (raises BadSignature if invalid)
+        email = signer.unsign(token)
         
-#         messages.error(request, f"Somethin went wrong, invalid credentials")
-#         return redirect("authentication:personalinformation")
-    
-#     userprofile_form = UserProfileForm(instance = userprofile_instance)
-#     userform = UserForm(instance=user_instance)
-#     templates = "authentication/personal_information.html"
-#     context = {
-#         "userprofile_form":userprofile_form,
-#         "userprofile":userprofile,
-#         "userform":userform
-#     }
-#     return render(request, templates, context)
+        # Step 2: Find user
+        user = get_object_or_404(User, email=email)
+        userprofile = get_object_or_404(UserProfile, user=user)
+
+        # Step 3: Check and update email_verified
+        if userprofile.email_verified:
+            messages.info(request, "Your email is already verified.")
+        else:
+            userprofile.email_verified = True
+            userprofile.save()
+            messages.success(request, "Email verification successful!")
+
+    except BadSignature:
+        messages.error(request, "Invalid or tampered verification link.")
+    except User.DoesNotExist:
+        messages.error(request, "No user found with this email.")
+    except UserProfile.DoesNotExist:
+        messages.error(request, "No user profile associated with this user.")
+
+    return redirect("authentication:personalinformation")
+
+def logoutview(request):
+    if request.method == "POST" and "logout_user_btn" in request.POST:
+        logout(request)
+        return redirect("authentication:auth")
+
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
+def accountsettingview(request):
+    user_accounts = get_user_model().objects.all().order_by("-id")
+    templates = "authentication/account_setting.html"
+    context = {
+        "user_accounts":user_accounts
+    }
+    return render(request, templates, context)
+
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
+def deleteuseraccountview(request, user_id):
+    if request.method == "POST" and "delete_user_account_btn" in request.POST:
+        user_account = get_object_or_404(User, pk = user_id)
+        user_account.delete()
+        messages.success(request, f"User deleted successfully")
+        return redirect("authentication:accountsetting")
+
+@cache_control(no_cache=True, must_revalidate=True, no_store=True, private=True)
+@login_required
+def updateuseraccountview(request, user_id):
+    if request.method == "POST" and "update_user_account_btn" in request.POST:
+        get_user = get_object_or_404(User, pk=user_id)
+        userprofile_instance = UserProfile.objects.filter(user=get_user).first()
+
+        # Update User model fields
+        get_user.first_name = request.POST.get("first_name", "")
+        get_user.last_name = request.POST.get("last_name", "")
+        get_user.email = request.POST.get("email", "")
+        get_user.username = get_user.email  # Use email as username
+
+        # Update UserProfile fields
+        if userprofile_instance:
+            userprofile_instance.full_name = f"{get_user.first_name} {get_user.last_name}"
+            userprofile_instance.gender = request.POST.get("gender", "")
+            userprofile_instance.address = request.POST.get("address", "")
+            # userprofile_instance.roles = request.POST.get("roles", "")
+            if request.POST.get("roles", "") == "Admin":
+                userprofile_instance.roles = "Admin"
+                get_user.is_superuser = True
+            else:
+                userprofile_instance.roles = "Testator"
+                get_user.is_superuser = False
+
+            userprofile_instance.phone_number = request.POST.get("phone_number", "")
+            userprofile_instance.email = get_user.email
+
+            dob = request.POST.get("date_of_birth")
+            if dob:
+                userprofile_instance.date_of_birth = dob
+
+            # Handle NIDA uniqueness check
+            new_nida = request.POST.get("nida_number", "")
+            if new_nida:
+                # Check if the NIDA is already taken by another user
+                if UserProfile.objects.filter(Q(nida_number=new_nida) & ~Q(user=get_user)).exists():
+                    messages.error(request, "Sorry, this NIDA number is already taken.")
+                    return redirect("authentication:accountsetting")
+
+                userprofile_instance.nida_number = new_nida
+
+        # Save updates
+        get_user.save()
+        if userprofile_instance:
+            userprofile_instance.save()
+
+        messages.success(request, "User account was updated successfully!")
+        return redirect("authentication:accountsetting")
+
+    return redirect("authentication:accountsetting")
+           

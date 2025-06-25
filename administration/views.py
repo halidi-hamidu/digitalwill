@@ -38,6 +38,8 @@ import weasyprint  # or use xhtml2pdf / reportlab
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from tokens import *
 from django.core.files.storage import default_storage
+from django.views.decorators.cache import cache_control
+from django.contrib.auth.decorators import login_required
 
 User = get_user_model()
 class UpdateEmailVerificationTokenGenerator(PasswordResetTokenGenerator):
@@ -49,6 +51,8 @@ email_verification_token = UpdateEmailVerificationTokenGenerator()
 signer = TimestampSigner()
 TOKEN_EXPIRY_SECONDS = 86400  # 1 day
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def verify_heir_view(request, token):
     try:
         # Validate token (max_age: 1 hour)
@@ -82,6 +86,8 @@ def verify_heir_view(request, token):
 
     return redirect("administration:digitalwill")
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def verify_asset_view(request, token):
     try:
         # Validate token with 1-day expiry
@@ -122,6 +128,8 @@ def verify_asset_view(request, token):
 
     return redirect("administration:digitalwill")
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def resend_asset_verification_email(request):
     # Retrieve pending asset from session
     pending = request.session.get("pending_asset")
@@ -154,6 +162,8 @@ def resend_asset_verification_email(request):
     messages.info(request, "Verification email resent. Please check your inbox.")
     return redirect("administration:digitalwill")
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def verify_special_account(request, token):
     try:
         # Verify the token with expiry
@@ -189,6 +199,8 @@ def verify_special_account(request, token):
 
     return redirect("administration:digitalwill")
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def resend_special_account_verification(request):
     # Retrieve pending data from session
     pending = request.session.get("pending_special_account")
@@ -233,6 +245,8 @@ def resend_special_account_verification(request):
     messages.success(request, "Verification email resent. Please check your inbox.")
     return redirect("administration:digitalwill")
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def verify_confidential_info(request, token):
     try:
         # Validate the token (expires in TOKEN_EXPIRY_SECONDS)
@@ -267,6 +281,8 @@ def verify_confidential_info(request, token):
 
     return redirect("administration:digitalwill")
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def resend_confidential_info_verification(request):
     # Check if session contains pending confidential info
     pending = request.session.get("pending_confidential_info")
@@ -311,6 +327,8 @@ def resend_confidential_info_verification(request):
     messages.success(request, "Verification email resent. Please check your inbox.")
     return redirect("administration:digitalwill")
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def verify_executor(request, token):
     try:
         # Validate token
@@ -339,6 +357,8 @@ def verify_executor(request, token):
     messages.success(request, "Executor has been successfully added.")
     return redirect("administration:digitalwill")
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def verify_instruction(request, token):
     try:
         # Validate token
@@ -366,6 +386,8 @@ def verify_instruction(request, token):
     messages.success(request, "Post-death instructions saved successfully.")
     return redirect("administration:digitalwill")
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def verify_audio(request, token):
     try:
         # Validate token
@@ -397,6 +419,8 @@ def verify_audio(request, token):
     messages.success(request, "Audio instruction uploaded successfully.")
     return redirect("administration:digitalwill")
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def verify_asset_update(request, token):
     try:
         # Validate the token
@@ -438,6 +462,8 @@ def verify_asset_update(request, token):
     messages.success(request, "Asset successfully updated after verification.")
     return redirect("administration:digitalwill")
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def verify_asset_delete(request, token):
     try:
         # Validate the token
@@ -466,7 +492,8 @@ def verify_asset_delete(request, token):
     request.session.pop("pending_asset_delete", None)
     return redirect("administration:digitalwill")
 
-
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def dashboardview(request):
     templates = "administration/dashboard.html"
     context = {}
@@ -475,6 +502,8 @@ def dashboardview(request):
 # def generate_heir_verification_token(data):
 #     return signer.sign(data)
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def digitalwillview(request):
     userprofile = UserProfile.objects.filter(user = request.user).first()
     heirs = Heir.objects.filter(testator = userprofile)
@@ -491,6 +520,7 @@ def digitalwillview(request):
     confidential_info_instance = ConfidentialInfo.objects.filter(testator = userprofile).first()
     executor_instance = Executor.objects.filter(testator = userprofile).first()
     post_death_instructions_instance = PostDeathInstruction.objects.filter(testator = userprofile).first()
+    audio_instructions_instance = AudioInstruction.objects.filter(testator = userprofile).first()
 
     if request.method == "POST" and "add_heir_btn" in request.POST:
         heir_form = HeirForm(request.POST)
@@ -845,6 +875,7 @@ def digitalwillview(request):
     confidential_info_form_instance = ConfidentialInfoForm(instance=confidential_info_instance)
     executor_form_instance = ExecutorForm(instance=executor_instance)
     post_death_instruction_form_instance = PostDeathInstructionForm(instance=post_death_instructions_instance)
+    audio_instruction_form_instance = AudioInstructionForm(instance = audio_instructions_instance)
 
     # Template to render
     templates = "administration/digital_will.html"
@@ -864,6 +895,7 @@ def digitalwillview(request):
         "confidential_info_form_instance": confidential_info_form_instance,
         "executor_form_instance": executor_form_instance,
         "post_death_instruction_form_instance": post_death_instruction_form_instance,
+        "audio_instruction_form_instance":audio_instruction_form_instance,
 
         "heirs": heirs,
         "assets": assets,
@@ -876,6 +908,8 @@ def digitalwillview(request):
 
     return render(request, templates, context)
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def digitalwillUpdateHeirview(request, heir_id):
     if request.method == "POST" and "update_heir_btn" in request.POST:
         heir = Heir.objects.filter(id=heir_id).first()
@@ -892,7 +926,8 @@ def digitalwillUpdateHeirview(request, heir_id):
             messages.error(request, "Heir not found.")
         return redirect("administration:digitalwill")
 
-
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def digitalwillDeleteHeirview(request, heir_id):
     if request.method == "POST" and "delete_heir_btn" in request.POST:
         heir = Heir.objects.filter(id=heir_id).first()
@@ -902,7 +937,9 @@ def digitalwillDeleteHeirview(request, heir_id):
         else:
             messages.error(request, "Heir not found.")
         return redirect("administration:digitalwill")
-   
+
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required  
 def digitalwillUpdateAssetview(request, asset_id):
     if request.method == "POST" and "update_asset_btn" in request.POST:
         # Get the current testator profile
@@ -960,7 +997,8 @@ def digitalwillUpdateAssetview(request, asset_id):
 
         return redirect("administration:digitalwill")
 
-
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def digitalwillDeleteAssetview(request, asset_id):
     if request.method == "POST" and "delete_asset_btn" in request.POST:
         # Get testator profile and asset or 404 if not found/not owned
@@ -1007,7 +1045,9 @@ def digitalwillDeleteAssetview(request, asset_id):
 
         messages.info(request, "A confirmation email with the asset summary was sent. Please verify to complete deletion.")
         return redirect("administration:digitalwill")
-    
+
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required    
 def digitalwillUpdateSpecialAccountview(request, special_account_id):
     # Get the logged-in user's profile (testator)
     testator = UserProfile.objects.filter(user=request.user).first()
@@ -1067,7 +1107,8 @@ def digitalwillUpdateSpecialAccountview(request, special_account_id):
     # Redirect if not a POST request or button not clicked
     return redirect("administration:digitalwill")
 
-
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def verify_special_account_update(request, token):
     # Verify the token signature to ensure it's valid and untampered
     try:
@@ -1117,6 +1158,8 @@ def verify_special_account_update(request, token):
     messages.success(request, "Special Account successfully updated after verification.")
     return redirect("administration:digitalwill")
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 # Request to delete a special account (sends verification email)
 def request_delete_special_account(request, special_account_id):
     if request.method == 'POST' and "delete_special_account_btn" in request.POST:
@@ -1168,7 +1211,8 @@ def request_delete_special_account(request, special_account_id):
     messages.error(request, "Invalid request method.")
     return redirect('administration:digitalwill')
 
-
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 # Confirm deletion via token link (deletes account after verification)
 def confirm_delete_special_account(request, token):
     # Fetch the delete token object; ensure it exists and is not used
@@ -1222,6 +1266,8 @@ def confirm_delete_special_account(request, token):
     messages.success(request, "Special account deleted and confirmation email sent.")
     return redirect('administration:digitalwill')
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def update_confidential_info(request, id):
     # Get the confidential info object or return 404 if not found
     confidential_info = get_object_or_404(ConfidentialInfo, id=id)
@@ -1266,7 +1312,9 @@ def update_confidential_info(request, id):
 
             messages.success(request, "Check your email to confirm the update.")
             return redirect("administration:digitalwill")
-        
+
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required        
 def confirm_update_confidential_info(request, uidb64, token):
     # Decode user id and get user
     try:
@@ -1334,6 +1382,8 @@ def confirm_update_confidential_info(request, uidb64, token):
     messages.error(request, "Invalid or expired verification link.")
     return redirect("administration:digitalwill")
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def request_delete_confidential_info(request, id):
     # Get the confidential info object or return 404 if not found
     confidential_info = get_object_or_404(ConfidentialInfo, id=id)
@@ -1362,7 +1412,8 @@ def request_delete_confidential_info(request, id):
     messages.success(request, "Verification email sent. Please check your email to confirm deletion.")
     return redirect('administration:digitalwill')
 
-
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def confirm_delete_confidential_info(request, uidb64, token):
     # Decode the user ID from the URL parameter and retrieve the user
     try:
@@ -1407,6 +1458,8 @@ def confirm_delete_confidential_info(request, uidb64, token):
     messages.error(request, "Invalid or expired verification link.")
     return redirect('administration:digitalwill')
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def request_update_executor(request, id):
     # Get the Executor object or return 404 if not found
     executor = get_object_or_404(Executor, id=id)
@@ -1453,6 +1506,8 @@ def request_update_executor(request, id):
     return render(request, 'administration/digital_will.html', {'form': form, 'executor': executor})
 
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def confirm_update_executor(request, uidb64, token):
     # Decode user ID from the URL and get the user object
     try:
@@ -1508,6 +1563,8 @@ def confirm_update_executor(request, uidb64, token):
     messages.error(request, "Invalid or expired confirmation link.")
     return redirect('administration:digitalwill')
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def request_delete_executor(request, id):
     # Get the executor or 404 if not found
     executor = get_object_or_404(Executor, id=id)
@@ -1540,7 +1597,8 @@ def request_delete_executor(request, id):
     messages.success(request, "A confirmation link has been sent to your email.")
     return redirect("administration:digitalwill")
 
-
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def confirm_delete_executor(request, uidb64, token):
     # Decode user ID from the URL and get the user
     try:
@@ -1593,6 +1651,8 @@ def confirm_delete_executor(request, uidb64, token):
     messages.error(request, "Invalid or expired confirmation link.")
     return redirect("administration:digitalwill")
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def request_update_post_death(request):
     # Retrieve the post-death instruction for the logged-in user (testator)
     instruction = get_object_or_404(PostDeathInstruction, testator__user=request.user)
@@ -1632,6 +1692,8 @@ def request_update_post_death(request):
 
     return render(request, 'administration.html', {'form': form})
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def confirm_update_post_death(request, uidb64, token):
     try:
         # Decode user ID and retrieve user
@@ -1684,6 +1746,8 @@ def confirm_update_post_death(request, uidb64, token):
     messages.error(request, "Invalid or expired verification link.")
     return redirect("administration:digitalwill")
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def request_delete_post_death_instruction(request, id):
     # Get the post-death instruction object or show 404 if not found
     instruction = get_object_or_404(PostDeathInstruction, id=id)
@@ -1716,7 +1780,8 @@ def request_delete_post_death_instruction(request, id):
     messages.success(request, "Check your email to confirm deletion.")
     return redirect("administration:digitalwill")
 
-
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def confirm_delete_post_death_instruction(request, uidb64, token):
     try:
         # Decode the user ID and fetch the user
@@ -1769,6 +1834,8 @@ def confirm_delete_post_death_instruction(request, uidb64, token):
     messages.error(request, "Invalid or expired confirmation link.")
     return redirect("administration:digitalwill")
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def request_update_audio_instruction(request, id):
     # Retrieve the AudioInstruction object or 404 if not found
     audio = get_object_or_404(AudioInstruction, id=id)
@@ -1814,7 +1881,8 @@ def request_update_audio_instruction(request, id):
     messages.error(request, "No file uploaded.")
     return redirect("administration:digitalwill")
 
-
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def confirm_update_audio_instruction(request, uidb64, token):
     try:
         # Decode the user ID and fetch the user
@@ -1872,6 +1940,8 @@ def confirm_update_audio_instruction(request, uidb64, token):
     messages.error(request, "Invalid or expired verification link.")
     return redirect("administration:digitalwill")
 
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def request_delete_audio_instruction(request, id):
     # Retrieve the audio instruction or return 404 if not found
     audio = get_object_or_404(AudioInstruction, id=id)
@@ -1902,7 +1972,8 @@ def request_delete_audio_instruction(request, id):
     messages.success(request, "Confirmation link sent to your email.")
     return redirect("administration:digitalwill")
 
-
+@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@login_required
 def confirm_delete_audio_instruction(request, uidb64, token):
     try:
         # Decode the user ID from the link and fetch the user
@@ -1955,3 +2026,22 @@ def confirm_delete_audio_instruction(request, uidb64, token):
     messages.error(request, "Invalid or expired link.")
     return redirect("administration:digitalwill")
 
+def beneficiaryview(request):
+    userprofile = UserProfile.objects.filter(user = request.user).first()
+    assets = Asset.objects.filter(testator = userprofile)
+    special_accounts = SpecialAccount.objects.filter(testator = userprofile)
+    
+    confidential_infos = ConfidentialInfo.objects.filter(testator = userprofile)
+    post_death_instructions = PostDeathInstruction.objects.filter(testator = userprofile)
+    audio_instructions = AudioInstruction.objects.filter(testator = userprofile)
+    templates = "administration/beneficiary.html"
+
+    # Context dictionary for template rendering
+    context = {
+        "assets": assets,
+        "special_accounts": special_accounts,
+        "confidential_infos": confidential_infos,
+        "post_death_instructions": post_death_instructions,
+        "audio_instructions": audio_instructions,
+    }
+    return render(request, templates, context)

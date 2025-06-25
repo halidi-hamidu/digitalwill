@@ -1,0 +1,290 @@
+{% extends '../layout.html' %}
+{% load static %}
+{% load widget_tweaks %}
+{% block title %}Accounts{% endblock %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="profile-header">
+            <h4>Account Settings</h4>
+            <!-- <button type="button" class="btn btn-sm edit-btn text-white" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+            <i class="bi bi-pencil-square me-1" data-bs-toggle="modal" data-bs-target="#staticBackdrop"></i> Add User
+            </button> -->
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="profile_inner_content">
+            <p class="text-success">Please! preview user account information, correct if needed, otherwise just click "<i class="bi bi-pencil-square"></i> <i class="bi bi-trash"></i> <i class="bi bi-eye"></i>" buttons to continue.</p>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped123 useraccount" id="useraccount">
+                        <thead>
+                            <tr>
+                                <th>SN</th>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <!-- <th>Email</th> -->
+                                <th>Roles</th>
+                                <th>Created At</th>
+                                <th>Last Login</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if user_accounts %}
+                                {% for user_account in user_accounts %}
+                                    <tr>
+                                        <td>{{forloop.counter}}</td>
+                                        <td>
+                                            {% if user_account.user_userprofile or not user_account.user_userprofile == "" %}
+                                                <span class="badge text-bg-dark">{{user_account.user_userprofile.id}}</span>
+                                            {% else %}
+                                                <span class="badge text-bg-dark">{{user_account.id}}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{user_account.username}}</td>
+                                        <!-- <td>{{user_account.email}}</td> -->
+                                        <td>
+                                            {% if not user_account.is_superuser %}
+                                                <span class="badge text-bg-info">Testator</span>
+                                            {% else %}
+                                                <span class="badge text-bg-success">Admin</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{user_account.date_joined}}</td>
+                                        <td>{{user_account.last_login}}</td>
+                                        <td>
+                                            <a href="" data-bs-toggle="offcanvas" data-bs-target="#updateuserAccountDetailsViewoffcanvas{{user_account.id}}"><i class="bi bi-pencil-square"></i></a>
+                                            <a href="" data-bs-toggle="modal" data-bs-target="#deleteUserAccountModel{{ user_account.id }}"><i class="bi bi-trash"></i></a>
+                                            <a href="" data-bs-toggle="offcanvas" data-bs-target="#userAccountDetailsViewoffcanvas{{user_account.id}}"><i class="bi bi-eye"></i></a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% endif %}
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update, Delete, User Modal -->
+{% if user_accounts %}
+{% for user_account in user_accounts %}
+<div class="offcanvas offcanvas-end w-100" data-bs-backdrop="static" tabindex="-1" id="updateuserAccountDetailsViewoffcanvas{{user_account.id}}" aria-labelledby="updateuserAccountDetailsViewoffcanvas{{user_account.id}}Label">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="updateuserAccountDetailsViewoffcanvas{{user_account.id}}Label">User information</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <div>
+        <div class="profile_inner_content">
+            <p class="text-success">
+                Please review your details below to ensure everything is accurate before proceeding.
+            </p>
+            <div class="table-responsive">
+                <form action="{% url 'authentication:updateuseraccount' user_account.id %}" method="POST" enctype="multipart/form-data" autocomplete="off">
+                    {% csrf_token %}
+                    <table class="table table-bordered table-striped123">
+                        {% if user_account.user_userprofile %}
+                            <thead class="table-info">
+                                <tr>
+                                    <th colspan="4">Personal informations</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Firstname : </td><td><input type="text" name="first_name" value="{{user_account.first_name}}" style="width: 100%;"></td>
+                                    <td>Lastname : </td><td><input type="text" name="last_name" value="{{user_account.last_name}}" style="width: 100%;"></td>
+                                </tr>
+                                <tr>
+                                    <td>Email : </td><td><input type="email" name="email" value="{{user_account.email}}" style="width: 100%;"></td>
+                                    <td>Gender : </td>
+                                    <td>
+                                        <select name="gender" id="gender" style="width: 100%;">
+                                            <option value="---------">Select gender</option>
+                                            <option value="Male" {% if user_account.user_userprofile.gender == "Male" %}selected{% endif %}>Male</option>
+                                            <option value="Female" {% if user_account.user_userprofile.gender == "Female" %}selected{% endif %}>Female</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Date of Birth : </td><td><input type="date" name="date_of_birth" value="{{user_account.user_userprofile.date_of_birth}}" style="width: 100%;"></td>
+                                    <td>Phonenumber: </td><td><input type="text" name="phone_number" value="{{user_account.user_userprofile.phone_number}}" style="width: 100%;"></td>
+                                </tr>
+                                <tr>
+                                    <td>Nida Number: </td><td><input type="number" name="nida_number" value="{{user_account.user_userprofile.nida_number}}" style="width: 100%;"></td>
+                                    <td>Address : </td><td><input type="text" name="address" value="{{user_account.user_userprofile.address}}" style="width: 100%;"></td>
+                                </tr>
+                                <tr>
+                                    <td>Roles: </td><td>
+                                        <select name="roles" id="roles" style="width: 100%;">
+                                            <option value="---------">Select roles</option>
+                                            <option value="Admin" {% if user_account.user_userprofile.roles == 'Admin' or user_account.is_superuser %}selected{% endif %}>Admin</option>
+                                            <option value="Testator" {% if user_account.user_userprofile.roles == 'Testator' or not user_account.is_superuser %}selected{% endif %}>Testator</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <thead class="table-warning">
+                                <tr>
+                                    <th colspan="4">Account informations</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Username : </td><td>{{user_account.username}}</td>
+                                    <td>Email : </td><td>{{user_account.username}}</td>
+                                </tr>
+                                <tr>
+                                    <td>Date Joined : </td><td>{{user_account.date_joined}}</td>
+                                    <td>Last Login : </td><td>{{user_account.last_login}}</td>
+                                </tr>
+                            </tbody>
+                        {% else %}
+                            <thead class="table-warning">
+                                <tr>
+                                    <th colspan="4">Account informations</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Username : </td><td><input type="text" name="username" value="{{user_account.username}}" style="width: 100%;"></td>
+                                    <td>Email : </td><td><input type="email" name="email" value="{{user_account.email}}" style="width: 100%;"></td>
+                                </tr>
+                                <tr>
+                                    <td>Date Joined : </td><td>{{user_account.date_joined}}</td>
+                                    <td>Last Login : </td><td>{{user_account.last_login}}</td>
+                                </tr>
+                            </tbody>
+                        {% endif %}
+                        <tbody>
+                            <tr>
+                                <td>Action Button : </td><td><button type="submit" name="update_user_account_btn" class=" btn btn-sm edit-btn"><i class="bi bi-pencil-square"></i> Save Changes</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </form>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if user_accounts %}
+{% for user_account in user_accounts %}
+    <div class="modal fade" id="deleteUserAccountModel{{ user_account.id }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteUserAccountModel{{ user_account.id }}Label" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="deleteUserAccountModel{{ user_account.id }}Label">Delete User Account</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="profile_update_form">
+              <form action="{% url 'authentication:deleteuseraccount' user_account.id %}" method="POST">
+                {% csrf_token %}
+                <p>Are you sure you want to delete this user account ?</p>
+                <div class="form-group d-flex justify-content-end gap-2">
+                  <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                  <button type="submit" name="delete_user_account_btn" class="btn btn-sm btn-danger">Delete</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+{% endif %}
+
+{% if user_accounts %}
+{% for user_account in user_accounts %}
+<div class="offcanvas offcanvas-end w-100" data-bs-backdrop="static" tabindex="-1" id="userAccountDetailsViewoffcanvas{{user_account.id}}" aria-labelledby="userAccountDetailsViewoffcanvas{{user_account.id}}Label">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="userAccountDetailsViewoffcanvas{{user_account.id}}Label">User information</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <div>
+        <div class="profile_inner_content">
+            <p class="text-success">
+                Please review your details below to ensure everything is accurate before proceeding.
+            </p>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped123">
+                    {% if user_account.user_userprofile %}
+                        <thead class="table-info">
+                            <tr>
+                                <th colspan="4">Personal informations</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td> Profile Id: </td><td><span class="text-dark">{{user_account.user_userprofile.id}}</span></td>
+                                <td> Profile Image: </td><td><span class="text-dark"><a href="{{user_account.user_userprofile.profie_image.urls}}">{{user_account.user_userprofile.profie_image}}</a></span></td>
+                            </tr>
+                            <tr>
+                                <td>Name : </td><td>{{user_account.first_name}} {{user_account.last_name}}</td>
+                                <td>Gender : </td><td>{{user_account.user_userprofile.gender}}</td>
+                            </tr>
+                            <tr>
+                                <td>Date of Birth : </td><td>{{user_account.user_userprofile.date_of_birth}}</td>
+                                <td>Phonenumber: </td><td>{{user_account.user_userprofile.phone_number}}</td>
+                            </tr>
+                            <tr>
+                                <td>Email : </td><td>{{user_account.user_userprofile.user.username}}</td>
+                                <td>Nida Number: </td><td>{{user_account.user_userprofile.nida_number}}</td>
+                            </tr>
+                            <tr>
+                                <td>Address : </td><td>{{user_account.user_userprofile.address}}</td>
+                            </tr>
+                        </tbody>
+                        <thead class="table-warning">
+                            <tr>
+                                <th colspan="4">Account informations</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Username : </td><td>{{user_account.username}}</td>
+                                <td>Email : </td><td>{{user_account.username}}</td>
+                            </tr>
+                            <tr>
+                                <td>Date Joined : </td><td>{{user_account.date_joined}}</td>
+                                <td>Last Login : </td><td>{{user_account.last_login}}</td>
+                            </tr>
+                        </tbody>
+                    {% else %}
+                        <thead class="table-warning">
+                            <tr>
+                                <th colspan="4">Account informations</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Username : </td><td>{{user_account.username}}</td>
+                                <td>Email : </td><td>{{user_account.email}}</td>
+                            </tr>
+                            <tr>
+                                <td>Date Joined : </td><td>{{user_account.date_joined}}</td>
+                                <td>Last Login : </td><td>{{user_account.last_login}}</td>
+                            </tr>
+                        </tbody>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+{% endblock %}

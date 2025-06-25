@@ -1,7 +1,8 @@
 {% extends '../layout.html' %}
 {% load static %}
+{% load humanize %}
 {% load widget_tweaks %}
-{% block title %}dashboard{% endblock %}
+{% block title %}Wills{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -100,7 +101,7 @@
                 <div class="tab-pane fade" id="asset" role="tabpanel">
                     <div class="table-responsive">
                         <div class="d-flex justify-content-between align-items-center py-2">
-                            <h4>Asset Lists</h4>4>
+                            <h4>Asset Lists</h4>
                             <button type="button" class="btn btn-sm edit-btn text-white" data-bs-toggle="modal" data-bs-target="#addAssetModel">
                                 <i class="bi bi-plus"></i> Add Asset
                             </button>
@@ -127,7 +128,7 @@
                                         <td>{{asset.testator}}</td>
                                         <td>{{asset.asset_type}}</td>
                                         <td>{{asset.location}}</td>
-                                        <td>{{asset.estimated_value}}</td>
+                                        <td>{{asset.estimated_value|intcomma}}</td>
                                         <td>{{asset.assigned_to}}</td>
                                         <td>
                                             <a href="#" data-bs-toggle="modal" data-bs-target="#updateAssetModel{{asset.id}}"><i class="bi bi-pencil-square"></i></a>
@@ -307,7 +308,7 @@
                                         <td>
                                             <a href="" data-bs-toggle="modal" data-bs-target="#updatepost_death_instructionModel{{post_death_instruction.id}}"><i class="bi bi-pencil-square"></i></a>
                                             <a href="" data-bs-toggle="modal" data-bs-target="#deletepost_death_instructionModel{{ post_death_instruction.id }}"><i class="bi bi-trash"></i></a>
-                                            <a href=""><i class="bi bi-eye"></i></a>
+                                            <a href="" data-bs-toggle="offcanvas" data-bs-target="#postDeathInstructionsDetailsViewoffcanvas{{post_death_instruction.id}}"><i class="bi bi-eye"></i></a>
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -345,9 +346,9 @@
                                         <td>{{audio_instruction.testator}}</td>
                                         <td>{{audio_instruction.audio_file}}</td>
                                         <td>
-                                            <a href=""><i class="bi bi-pencil-square"></i></a>
-                                            <a href=""><i class="bi bi-trash"></i></a>
-                                            <a href=""><i class="bi bi-eye"></i></a>
+                                            <a href="" data-bs-toggle="modal" data-bs-target="#updateAudioInstructionModel{{audio_instruction.id}}"><i class="bi bi-pencil-square"></i></a>
+                                            <a href="" data-bs-toggle="modal" data-bs-target="#deleteAudioInstructionModel{{ audio_instruction.id }}"><i class="bi bi-trash"></i></a>
+                                            <a href="" data-bs-toggle="offcanvas" data-bs-target="#audioInstructionDetailsViewoffcanvas{{audio_instruction.id}}"><i class="bi bi-eye"></i></a>
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -1386,11 +1387,11 @@
   {% endfor %}
 {% endif %}
 
-{% if confidential_infos %}
-{% for confidential_info in confidential_infos %}
-<div class="offcanvas offcanvas-end w-100" data-bs-backdrop="static" tabindex="-1" id="confidentialInfoDetailsViewoffcanvas{{confidential_info.id}}" aria-labelledby="confidentialInfoDetailsViewoffcanvas{{confidential_info.id}}Label">
+{% if post_death_instructions %}
+{% for post_death_instruction in post_death_instructions %}
+<div class="offcanvas offcanvas-end w-100" data-bs-backdrop="static" tabindex="-1" id="postDeathInstructionsDetailsViewoffcanvas{{post_death_instruction.id}}" aria-labelledby="postDeathInstructionsDetailsViewoffcanvas{{post_death_instruction.id}}Label">
   <div class="offcanvas-header">
-    <h5 class="offcanvas-title" id="confidentialInfoDetailsViewoffcanvas{{confidential_info.id}}Label">Confidential informations</h5>
+    <h5 class="offcanvas-title" id="confidentialInfoDetailsViewoffcanvas{{confidential_info.id}}Label">Post Death Instruction</h5>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
   <div class="offcanvas-body">
@@ -1408,41 +1409,29 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td>Name : </td><td>{{confidential_info.testator.user.first_name}} {{confidential_info.testator.user.last_name}}</td>
-                            <td>Gender : </td><td>{{confidential_info.testator.gender}}</td>
+                            <td>Name : </td><td>{{post_death_instruction.testator.user.first_name}} {{post_death_instruction.testator.user.last_name}}</td>
+                            <td>Gender : </td><td>{{post_death_instruction.testator.gender}}</td>
                         </tr>
                         <tr>
-                            <td>Date of Birth : </td><td>{{confidential_info.testator.date_of_birth}}</td>
-                            <td>Phonenumber: </td><td>{{confidential_info.testator.phone_number}}</td>
+                            <td>Date of Birth : </td><td>{{post_death_instruction.testator.date_of_birth}}</td>
+                            <td>Phonenumber: </td><td>{{post_death_instruction.testator.phone_number}}</td>
                         </tr>
                         <tr>
-                            <td>Email : </td><td>{{confidential_info.testator.user.username}}</td>
-                            <td>Nida Number: </td><td>{{confidential_info.testator.nida_number}}</td>
+                            <td>Email : </td><td>{{post_death_instruction.testator.user.username}}</td>
+                            <td>Nida Number: </td><td>{{post_death_instruction.testator.nida_number}}</td>
                         </tr>
                         <tr>
-                            <td>Address : </td><td>{{confidential_info.testator.address}}</td>
+                            <td>Address : </td><td>{{post_death_instruction.testator.address}}</td>
                         </tr>
                     </tbody>
                     <thead class="table-warning">
                         <tr>
-                            <th colspan="4">Confidential informations</th>
+                            <th colspan="4">Post death instruction informations</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td>instructions : </td><td>{{confidential_info.instructions}}</td>
-                            <td>confidential_file : </td><td><a href="{{confidential_info.confidential_file.urls}}">{{confidential_info.confidential_file.name}}</a></td>
-                        </tr>
-                        <tr>
-                            <td>assigned_to : </td><td>
-                                {% if confidential_info.assigned_to %}
-                                    <ul>
-                                        {% for assignee in confidential_info.assigned_to.all %}                                        
-                                            <li>{{assignee.full_name}} as {{assignee.relationship}}</li>
-                                        {% endfor %}
-                                    </ul>
-                                {% endif %}
-                            </td>
+                            <td>Instructions : </td><td>{{post_death_instruction.instructions}}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -1455,36 +1444,26 @@
 {% endif %}
 
 <!-- Update, Delete, View Audio Instruction Modal -->
-{% if confidential_infos %}
-{% for confidential_info in confidential_infos %}
-<div class="modal fade" id="updateConfidentialInfoModel{{confidential_info.id}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="updateConfidentialInfoModel{{confidential_info.id}}Label" aria-hidden="true">
+{% if audio_instructions %}
+{% for audio_instruction in audio_instructions %}
+<div class="modal fade" id="updateAudioInstructionModel{{audio_instruction.id}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="updateAudioInstructionModel{{audio_instruction.id}}Label" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h1 class="modal-title fs-5" id="updateConfidentialInfoModel{{confidential_info.id}}Label">Update Confidential Info</h1>
+        <h1 class="modal-title fs-5" id="updateAudioInstructionModel{{audio_instruction.id}}Label">Update Audio Instruction</h1>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <div class="profile_update_form">
-            <form action="{% url 'administration:update_confidential_info' confidential_info.id %}" method="POST" autocomplete="off" enctype="multipart/form-data">
+            <form action="{% url 'administration:request_update_audio_instruction' audio_instruction.id %}" method="POST" autocomplete="off" enctype="multipart/form-data">
                 {% csrf_token %}
-
                 <div class="mb-2 form-group">
-                    <label for="">Instruction</label>
-                    <input type="hidden" name="confidential_info_id" value="{{confidential_info.id}}">
-                    {% render_field confidential_info_form_instance.instructions name="instructions" class="form-control input-sm" rows="3" %}
-                </div>
-                <div class="mb-2 form-group">
-                    <label for="">Confidential File</label>
-                    {% render_field confidential_info_form_instance.confidential_file name="confidential_file" class="form-control input-sm" rows="3" %}
-                </div>
-                <div class="mb-2 form-group">
-                    <label for="">Assigned To</label>
-                    {% render_field confidential_info_form_instance.assigned_to name="assigned_to" class="form-control input-sm" %}
+                    <label for="">Upload Audio File</label>
+                    {% render_field audio_instruction_form_instance.audio_file name="audio_file" class="form-control input-sm" rows="3" %}
                 </div>
                 <div class="form-roup d-flex justify-content-end gap-2">
                     <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" name="update_confidential_info_btn" class="btn btn-sm edit-btn"> Update Confidential Info</button>
+                    <button type="submit" name="update_audio_instruction_btn" class="btn btn-sm edit-btn"> Update Audio Instruction</button>
                 </div>
             </form>
         </div>
@@ -1495,23 +1474,23 @@
 {% endfor %}
 {% endif %}
 
-{% if confidential_infos %}
-{% for confidential_info in confidential_infos %}
-    <div class="modal fade" id="deleteSpecialConfidentialInfoModel{{ confidential_info.id }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteSpecialConfidentialInfoModel{{ confidential_info.id }}Label" aria-hidden="true">
+{% if audio_instructions %}
+{% for audio_instruction in audio_instructions %}
+    <div class="modal fade" id="deleteAudioInstructionModel{{ audio_instruction.id }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteAudioInstructionModel{{ audio_instruction.id }}Label" aria-hidden="true">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h1 class="modal-title fs-5" id="deleteSpecialConfidentialInfoModel{{ confidential_info.id }}Label">Delete Confidential Info</h1>
+            <h1 class="modal-title fs-5" id="deleteAudioInstructionModel{{ audio_instruction.id }}Label">Delete Audio Instruction</h1>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <div class="profile_update_form">
-              <form action="{% url 'administration:request_delete_confidential_info' confidential_info.id %}" method="POST">
+              <form action="{% url 'administration:request_delete_audio_instruction' audio_instruction.id %}" method="POST">
                 {% csrf_token %}
-                <p>Are you sure you want to delete this confidential info?</p>
+                <p>Are you sure you want to delete this audio instruction ?</p>
                 <div class="form-group d-flex justify-content-end gap-2">
                   <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
-                  <button type="submit" name="delete_confidential_info_btn" class="btn btn-sm btn-danger">Delete</button>
+                  <button type="submit" name="delete_audio_instruction_btn" class="btn btn-sm btn-danger">Delete</button>
                 </div>
               </form>
             </div>
@@ -1522,11 +1501,11 @@
   {% endfor %}
 {% endif %}
 
-{% if confidential_infos %}
-{% for confidential_info in confidential_infos %}
-<div class="offcanvas offcanvas-end w-100" data-bs-backdrop="static" tabindex="-1" id="confidentialInfoDetailsViewoffcanvas{{confidential_info.id}}" aria-labelledby="confidentialInfoDetailsViewoffcanvas{{confidential_info.id}}Label">
+{% if audio_instructions %}
+{% for audio_instruction in audio_instructions %}
+<div class="offcanvas offcanvas-end w-100" data-bs-backdrop="static" tabindex="-1" id="audioInstructionDetailsViewoffcanvas{{audio_instruction.id}}" aria-labelledby="audioInstructionDetailsViewoffcanvas{{audio_instruction.id}}Label">
   <div class="offcanvas-header">
-    <h5 class="offcanvas-title" id="confidentialInfoDetailsViewoffcanvas{{confidential_info.id}}Label">Confidential informations</h5>
+    <h5 class="offcanvas-title" id="audioInstructionDetailsViewoffcanvas{{audio_instruction.id}}Label">Audio instruction information</h5>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
   <div class="offcanvas-body">
@@ -1544,42 +1523,31 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td>Name : </td><td>{{confidential_info.testator.user.first_name}} {{confidential_info.testator.user.last_name}}</td>
-                            <td>Gender : </td><td>{{confidential_info.testator.gender}}</td>
+                            <td>Name : </td><td>{{audio_instruction.testator.user.first_name}} {{audio_instruction.testator.user.last_name}}</td>
+                            <td>Gender : </td><td>{{audio_instruction.testator.gender}}</td>
                         </tr>
                         <tr>
-                            <td>Date of Birth : </td><td>{{confidential_info.testator.date_of_birth}}</td>
-                            <td>Phonenumber: </td><td>{{confidential_info.testator.phone_number}}</td>
+                            <td>Date of Birth : </td><td>{{audio_instruction.testator.date_of_birth}}</td>
+                            <td>Phonenumber: </td><td>{{audio_instruction.testator.phone_number}}</td>
                         </tr>
                         <tr>
-                            <td>Email : </td><td>{{confidential_info.testator.user.username}}</td>
-                            <td>Nida Number: </td><td>{{confidential_info.testator.nida_number}}</td>
+                            <td>Email : </td><td>{{audio_instruction.testator.user.username}}</td>
+                            <td>Nida Number: </td><td>{{audio_instruction.testator.nida_number}}</td>
                         </tr>
                         <tr>
-                            <td>Address : </td><td>{{confidential_info.testator.address}}</td>
+                            <td>Address : </td><td>{{audio_instruction.testator.address}}</td>
                         </tr>
                     </tbody>
                     <thead class="table-warning">
                         <tr>
-                            <th colspan="4">Confidential informations</th>
+                            <th colspan="4">Audio instruction informations</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td>instructions : </td><td>{{confidential_info.instructions}}</td>
-                            <td>confidential_file : </td><td><a href="{{confidential_info.confidential_file.urls}}">{{confidential_info.confidential_file.name}}</a></td>
+                            <td>Audio File : </td><td><a href="{{audio_instruction.audio_file.urls}}" download="download">{{audio_instruction.audio_file.name}}</a></td>
                         </tr>
-                        <tr>
-                            <td>assigned_to : </td><td>
-                                {% if confidential_info.assigned_to %}
-                                    <ul>
-                                        {% for assignee in confidential_info.assigned_to.all %}                                        
-                                            <li>{{assignee.full_name}} as {{assignee.relationship}}</li>
-                                        {% endfor %}
-                                    </ul>
-                                {% endif %}
-                            </td>
-                        </tr>
+                        
                     </tbody>
                 </table>
             </div>

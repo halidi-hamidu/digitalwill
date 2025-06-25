@@ -51,7 +51,7 @@ urlpatterns = [
     path('executor/delete/confirm/<uidb64>/<token>/', views.confirm_delete_executor, name='confirm_delete_executor'),
 
     # Post-Death Instructions
-    path('post-death/update/request/', views.request_update_post_death, name='request_update_post_death'),
+    path('post-death/update/request/<uuid:id>/', views.request_update_post_death, name='request_update_post_death'),
     path('post-death/update/confirm/<uidb64>/<token>/', views.confirm_update_post_death, name='confirm_update_post_death'),
     path('post-death/delete/request/<uuid:id>/', views.request_delete_post_death_instruction, name='request_delete_post_death_instruction'),
     path('post-death/delete/confirm/<uidb64>/<token>/', views.confirm_delete_post_death_instruction, name='confirm_delete_post_death_instruction'),
@@ -61,4 +61,6 @@ urlpatterns = [
     path('audio/update/confirm/<uidb64>/<token>/', views.confirm_update_audio_instruction, name='confirm_update_audio_instruction'),
     path('audio/delete/request/<uuid:id>/', views.request_delete_audio_instruction, name='request_delete_audio_instruction'),
     path('audio/delete/confirm/<uidb64>/<token>/', views.confirm_delete_audio_instruction, name='confirm_delete_audio_instruction'),
+
+    path('beneficiary/', views.beneficiaryview, name="beneficiary"),
 ]

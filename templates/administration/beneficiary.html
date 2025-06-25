@@ -1,0 +1,178 @@
+{% extends '../layout.html' %}
+{% load static %}
+{% load humanize %}
+{% load widget_tweaks %}
+{% block title %}Beneficiary{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="profile-header">
+            <h4>Beneficiaries</h4>
+            <!-- <button type="button" class="btn btn-sm edit-btn text-white" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+                <i class="bi bi-upload"></i> Upload digital will
+            </button> -->
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="profile_inner_content">
+
+            <!-- Tab Navigation -->
+            <ul class="nav nav-tabs" id="infoTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="asset-tab" data-toggle="tab" href="#asset" role="tab">Asset</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="special-tab" data-toggle="tab" href="#special" role="tab">SpecialAccount</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="confidential-tab" data-toggle="tab" href="#confidential" role="tab">ConfidentialInfo</a>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content pt-3" id="infoTabsContent">
+
+                <!-- Reusable Content Template -->
+                <!-- Start of Single Tab Content -->
+                <!-- Repeat this div with different IDs for each tab -->
+                <!-- Heir -->
+
+                <!-- Asset -->
+                <div class="tab-pane active" id="asset" role="tabpanel">
+                    <div class="table-responsive">
+                        <div class="d-flex justify-content-between align-items-center py-2">
+                            <h4>Asset Lists</h4>
+                        </div>
+                        <table class="table table-bordered table-striped assetTable" id="assetTable">
+                            <thead>
+                                <tr>
+                                    <th>SN</th>
+                                    <th>ID</th>
+                                    <th>Testator</th>
+                                    <th>Asset Type</th>
+                                    <th>Location</th>
+                                    <th>Estimated Value</th>
+                                    <th>Beneficiaries</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if assets %}
+                                {% for asset in assets %}
+                                    <tr>
+                                        <td>{{forloop.counter}}</td>
+                                        <td><span class="badge text-bg-dark">{{asset.id}}</span></td>
+                                        <td>{{asset.testator}}</td>
+                                        <td>{{asset.asset_type}}</td>
+                                        <td>{{asset.location}}</td>
+                                        <td>{{asset.estimated_value|intcomma}}</td>
+                                        <td>{{asset.assigned_to}}</td>
+                                        <!-- <td>
+                                            {% if not asset.assigned_to == None or not asset.assigned_to == "" %}
+                                                {% for asset in asset.assigned_to.all %}
+                                                    {{asset.assigned_to.full_name}}
+                                                {% endfor %}
+                                            {% else %}
+                                                <ul><li>No Beneficiary added yet</li></ul>
+                                            {% endif %}
+                                        </td> -->
+                                    </tr>
+                                {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Repeat for all other tabs using same template -->
+                <div class="tab-pane fade" id="special" role="tabpanel">
+                    <div class="table-responsive">
+                        <div class="d-flex justify-content-between align-items-center py-2">
+                            <h4>Account Lists</h4>
+                        </div>
+                        
+                        <table class="table table-bordered table-striped specialAccountTable" id="specialAccountTable">
+                            <thead>
+                                <tr>
+                                    <th>SN</th>
+                                    <th>ID</th>
+                                    <th>Testator</th>
+                                    <th>Account Type</th>
+                                    <th>Account Name</th>
+                                    <th>Platform Or Location</th>
+                                    <th>Beneficiaries</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if special_accounts %}
+                                {% for special_account in special_accounts %}
+                                    <tr>
+                                        <td>{{forloop.counter}}</td>
+                                        <td><span class="badge text-bg-dark">{{special_account.id}}</span></td>
+                                        <td>{{special_account.testator}}</td>
+                                        <td>{{special_account.account_type}}</td>
+                                        <td>{{special_account.account_name}}</td>
+                                        <td>{{special_account.account_number}}</td>
+                                        <!-- <td>
+                                            {% if not special_account.assigned_to == None or not special_account.assigned_to == "" %}
+                                                {% for special_account in special_account.assigned_to.all %}
+                                                    {{special_account.assigned_to.full_name}}
+                                                {% endfor %}
+                                            {% else %}
+                                                <ul><li>No Beneficiary added yet</li></ul>
+                                            {% endif %}
+                                        </td> -->
+                                        <td>{{special_account.assigned_to}}</td>
+                                    </tr>
+                                {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="confidential" role="tabpanel">
+                    <div class="table-responsive">
+                        <div class="d-flex justify-content-between align-items-center py-2">
+                            <h4>Confidential Info Lists</h4>
+                        </div>
+                        
+                        <table class="table table-bordered table-striped confidentialInfoTable" id="confidentialInfoTable">
+                            <thead>
+                                <tr>
+                                    <th>SN</th>
+                                    <th>ID</th>
+                                    <th>Testator</th>
+                                    <th>Instructions</th>
+                                    <th>Confidential File</th>
+                                    <th>Beneficiaries</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if confidential_infos %}
+                                {% for confidential_info in confidential_infos %}
+                                    <tr>
+                                        <td>{{forloop.counter}}</td>
+                                        <td><span class="badge text-bg-dark">{{confidential_info.id}}</span></td>
+                                        <td>{{confidential_info.testator}}</td>
+                                        <td>{{confidential_info.instructions}}</td>
+                                        <td>{{confidential_info.confidential_file}}</td>
+                                        <td>{{confidential_info.assigned_to}}</td>
+                                    </tr>
+                                {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div> <!-- End tab-content -->
+
+        </div> <!-- End profile_inner_content -->
+    </div>
+</div>
+
+{% endblock %}
