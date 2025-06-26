@@ -31,6 +31,8 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth import get_user_model
 from weasyprint import HTML
+from django.db.models import Sum, Count
+import json
 
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 import six
@@ -492,15 +494,47 @@ def verify_asset_delete(request, token):
     request.session.pop("pending_asset_delete", None)
     return redirect("administration:digitalwill")
 
-@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@cache_control(no_cache=True, must_revalidate=True, no_store=True, private=True)
 @login_required
 def dashboardview(request):
-    templates = "administration/dashboard.html"
-    context = {}
-    return render(request, templates, context)
+    user_profile = request.user.user_userprofile
 
-# def generate_heir_verification_token(data):
-#     return signer.sign(data)
+    heirs = Heir.objects.filter(testator=user_profile)
+    assets = Asset.objects.filter(testator=user_profile)
+    special_accounts = SpecialAccount.objects.filter(testator=user_profile)
+    confidential_infos = ConfidentialInfo.objects.filter(testator=user_profile)
+
+    total_asset_value = assets.aggregate(total=Sum('estimated_value'))['total'] or 0
+
+    asset_distribution = list(
+        assets.values('asset_type').annotate(count=Count('id'))
+    )
+
+    heir_distribution = list(
+        heirs.values('relationship').annotate(count=Count('id'))
+    )
+
+    account_distribution = list(
+        special_accounts.values('account_type').annotate(count=Count('id'))
+    )
+
+    confidential_distribution = list(
+        confidential_infos.annotate(assigned_count=Count('assigned_to')).values('assigned_count')
+    )
+
+    context = {
+        'heirs': heirs,
+        'assets': assets,
+        'special_accounts': special_accounts,
+        'confidential_infos': confidential_infos,
+        'total_asset_value': total_asset_value,
+        'asset_distribution': asset_distribution,
+        'heir_distribution': heir_distribution,
+        'account_distribution': account_distribution,
+        'confidential_distribution': confidential_distribution,
+    }
+
+    return render(request, 'administration/dashboard.html', context)
 
 @cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
 @login_required
@@ -527,10 +561,15 @@ def digitalwillview(request):
 
         if heir_form.is_valid():
             full_name = heir_form.cleaned_data["full_name"]
+            get_heir_by_phone = Heir.objects.filter(phone_number = heir_form.cleaned_data["phone_number"]).first()
 
             # Prevent duplicate heir for the same testator
             if Heir.objects.filter(full_name__iexact=full_name, testator=userprofile).exists():
                 messages.info(request, f"Heir '{full_name}' already exists for this testator.")
+                return redirect("administration:digitalwill")
+            
+            if Heir.objects.filter(phone_number = heir_form.cleaned_data["phone_number"]).exclude(full_name = full_name):
+                messages.info(request, f"Heir phone: '{heir_form.cleaned_data["phone_number"]}' already used by other user.")
                 return redirect("administration:digitalwill")
 
             # Generate a unique, signed token

@@ -3,7 +3,9 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_control
+from datetime import date, datetime
 from .models import *
+from django.core import signing
 from .forms import *
 from django.db.models import Q
 from django.contrib import messages
@@ -34,72 +36,130 @@ from django.core.signing import Signer, BadSignature
 from django.core.signing import TimestampSigner, SignatureExpired, BadSignature
 from django.views.decorators.cache import cache_control
 
+from django.contrib.auth.views import PasswordResetView
+from django.urls import reverse_lazy
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+
+
+from django.contrib.auth.views import PasswordResetView
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+
+class CustomPasswordResetView(PasswordResetView):
+    template_name = 'authentication/registration/password_reset_form.html'
+    email_template_name = 'authentication/registration/password_reset_email.html'
+    subject_template_name = 'authentication/registration/password_reset_subject.txt'
+    success_url = reverse_lazy('authentication:password_reset_done')
+    token_generator = default_token_generator
+
+    def form_valid(self, form):
+        """Send the password reset email manually with full context."""
+        opts = {
+            'use_https': self.request.is_secure(),
+            'token_generator': self.token_generator,
+            'from_email': self.from_email,
+            'request': self.request,
+            'email_template_name': self.email_template_name,
+            'subject_template_name': self.subject_template_name,
+        }
+
+        for user in form.get_users(form.cleaned_data["email"]):
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = self.token_generator.make_token(user)
+            password_reset_confirm_url = self.request.build_absolute_uri(
+                reverse('authentication:password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
+            )
+
+            context = {
+                'email': user.email,
+                'domain': self.request.get_host(),
+                'site_name': 'localhost:8000',
+                'uid': uid,
+                'user': user,
+                'token': token,
+                'protocol': 'https' if self.request.is_secure() else 'http',
+                'password_reset_confirm_url': password_reset_confirm_url,
+            }
+
+            subject = render_to_string(self.subject_template_name, context).strip()
+            body = render_to_string(self.email_template_name, context)
+
+            send_mail(subject, body, opts['from_email'], [user.email])
+
+        return super().form_valid(form)
+
 # views.py
+def registerview(request):
+    if request.method == "POST":
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data["username"]  # assuming username is used as email
+            if User.objects.filter(username=email).exists():
+                messages.info(request, f"Email {email} is already in use.")
+                return redirect("authentication:registration")
 
-signer = TimestampSigner()
-VERIFICATION_EXPIRATION_SECONDS = 60 * 60 * 24  # 1 day
+            # Create user and deactivate
+            user = form.save(commit=False)
+            user.email = email
+            user.is_active = False
+            user.save()
 
-@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
-@login_required
-def verify_email_view(request, token):
-    try:
-        email = signer.unsign(token, max_age=VERIFICATION_EXPIRATION_SECONDS)
-        userprofile = get_object_or_404(UserProfile, user__email=email)
-        userprofile.email_verified = True
-        userprofile.save()
-        messages.success(request, "Email verified successfully! You can now update your profile.")
-    except SignatureExpired:
-        messages.error(request, "Verification link expired. Please request a new verification email.")
-    except BadSignature:
-        messages.error(request, "Invalid verification link.")
+            # Create associated UserProfile
+            UserProfile.objects.create(user=user, email=email, email_verified=False)
 
-    return redirect("authentication:personalinformation")
+            # Generate verification token
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            link = request.build_absolute_uri(
+                reverse("authentication:verify_email", kwargs={"uidb64": uid, "token": token})
+            )
 
-@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
-@login_required
-def resend_verification_email(request):
-    userprofile = get_object_or_404(UserProfile, user=request.user)
-    user = request.user
+            # Send verification email
+            subject = "Verify your email address"
+            body = render_to_string("authentication/accounts/verify_email.html", {
+                "user": user.username,
+                "verification_link": link,
+            })
+            email_message = EmailMessage(subject, body, settings.DEFAULT_FROM_EMAIL, [user.email])
+            email_message.content_subtype = "html"  # Ensure HTML rendering
+            email_message.send()
 
-    if userprofile.email_verified:
-        messages.info(request, "Your email is already verified.")
-        return redirect("authentication:personalinformation")
+            messages.success(request, "Registration successful! Please check your email to verify.")
+            return redirect("authentication:registration")
+        else:
+            messages.error(request, "❌ Invalid registration. Please check the form.")
+            return redirect("authentication:registration")
 
-    token = signer.sign(user.email)
-    verification_url = request.build_absolute_uri(
-        reverse("authentication:verify_email", kwargs={"token": token})
-    )
-    pdf_buffer = generate_user_pdf(user, userprofile)
+    # GET request
+    return render(request, "authentication/register.html", {"register_form": UserCreationForm()})
 
-    email = EmailMessage(
-        subject="Verify your email address",
-        body=f"Please verify your email by clicking the link below:\n{verification_url}",
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to=[user.email],
-    )
-    email.attach("user_profile.pdf", pdf_buffer.getvalue(), "application/pdf")
-    email.send()
 
-    messages.success(request, "Verification email resent successfully.")
-    return redirect("authentication:personalinformation")
-
-@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
-@login_required
-def verify_email(request, uidb64, token):
+def verify_email_view(request, uidb64, token):
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
         user = User.objects.get(pk=uid)
     except (User.DoesNotExist, ValueError, TypeError, OverflowError):
         user = None
 
-    userprofile = UserProfile.objects.filter(user = user).first()
-    if user is not None and default_token_generator.check_token(user, token):
-        user.is_active = True
-        user.save()
-        return HttpResponse("Email verified! You can now log in.")
+    if user and default_token_generator.check_token(user, token):
+        profile = get_object_or_404(UserProfile, user=user)
+        if not profile.email_verified:
+            profile.email_verified = True
+            user.is_active = True
+            user.save()
+            profile.save()
+            messages.success(request, "Email verified successfully! You can now log in.")
+        else:
+            messages.info(request, "ℹEmail is already verified.")
     else:
-        return HttpResponse("Verification link is invalid or expired.")
+        messages.error(request, "Invalid or expired verification link.")
 
+    return redirect("authentication:registration")
+
+
+signer = TimestampSigner()
 # Create your views here.
 def loginview(request):
     if request.method == "POST" and "login_user_btn" in request.POST:
@@ -117,67 +177,10 @@ def loginview(request):
     }
     return render(request, templates, context)
 
-def registerview(request):
-    if request.method == "POST" and "register_user_btn" in request.POST:
-        register_form = UserCreationForm(request.POST or None)
-        if register_form.is_valid():
-            if not User.objects.filter(username = request.POST.get("username"), password = request.POST.get("password1")).exists():
-                register_instance = register_form.save(commit=False)
-                register_instance.email = request.POST.get("username")
-                register_instance.is_active = False
-                userprofile = UserProfile(
-                    user = register_instance,
-                    email = register_instance.email
-                )
-                token = default_token_generator.make_token(register_instance)
-                uid = urlsafe_base64_encode(force_bytes(register_instance.pk))
-                domain = get_current_site(request).domain
-                verification_link = f"http://{domain}{reverse('authentication:verify-email', kwargs={'uidb64': uid, 'token': token})}"
-
-                # Send verification email
-                subject = "Verify your email"
-                message = render_to_string('authentication/accounts/verify_email.html', {
-                    'user': register_instance.username,
-                    'verification_link': verification_link,
-                })
-                message_from = settings.EMAIL_HOST_USER
-
-                print(f"####################")
-                print(f"Subject: {subject}")
-                print(f"Message: {message}")
-                print(f"From: {message_from}")
-                print(f"To: {[register_instance.email]}")
-                print(f"####################")
-    
-                send_mail(subject, message, message_from, [register_instance.email])
-                if send_mail(subject, message, message_from, [register_instance.email]):
-                    print("Email sent successfully!")
-                else:
-                    print("Failed sent an email successfully!")
-                
-                userprofile.email_verified = True
-                userprofile.is_active = True
-                register_instance.save()
-                userprofile.save()
-                # return HttpResponse("Please check your email to verify your account.")
-                messages.success(request, f"Please check your email to verify your account.!")
-                return redirect("authentication:registration")
-            messages.info(request, f"User {request.POST.get("username")} is already exists")
-            return redirect("authentication:registration")
-        messages.error(request, f"Something went wrong, invalid credentials")
-        return redirect("authentication:registration")
-
-    register_form = UserCreationForm()
-    templates = "authentication/register.html"
-    context = {
-        "register_form":register_form
-    }
-    return render(request, templates, context)
-
+def verify_failed(request):
+    return render(request, "authentication/verify_failed.html")
 
 signer = Signer()
-@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
-@login_required
 def generate_user_pdf(user, profile):
     buffer = BytesIO()
     p = canvas.Canvas(buffer)
@@ -199,7 +202,9 @@ def generate_user_pdf(user, profile):
     buffer.seek(0)
     return buffer
 
-@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+signer = signing.TimestampSigner()
+
+@cache_control(no_cache=True, privacy=True, must_revalidate=True, no_store=True)
 @login_required
 def personalinformationview(request):
     userprofile_instance = get_object_or_404(UserProfile, user=request.user)
@@ -211,16 +216,32 @@ def personalinformationview(request):
 
         if userprofile_form.is_valid() and userform.is_valid():
             if not userprofile_instance.email_verified:
-                # Generate verification token
-                token = signer.sign(user_instance.email)
+                # Combine form data and convert dates to strings
+                form_data = {}
+                form_data.update(userprofile_form.cleaned_data)
+                form_data.update(userform.cleaned_data)
+
+                # Remove file fields that cannot be serialized
+                form_data.pop('profie_image', None)  # adjust if your field name differs
+
+                # Convert date/datetime objects to ISO strings
+                for key, value in form_data.items():
+                    if isinstance(value, (date,)):
+                        form_data[key] = value.isoformat()
+
+                # Create signed token with user PK and form data
+                token = signing.dumps({
+                    "user_pk": user_instance.pk,
+                    "form_data": form_data,
+                })
+
                 verification_url = request.build_absolute_uri(
                     reverse("authentication:verify_email", kwargs={"token": token})
                 )
 
-                # Generate PDF
+                # Generate PDF for current profile (not updated)
                 pdf_buffer = generate_user_pdf(user_instance, userprofile_instance)
 
-                # Compose and send email
                 email = EmailMessage(
                     subject="Verify your email address",
                     body=f"Please verify your email by clicking the link below:\n{verification_url}",
@@ -233,19 +254,34 @@ def personalinformationview(request):
                 messages.info(request, "Verification link and PDF profile have been sent to your email.")
                 return redirect("authentication:personalinformation")
 
-            # Save changes only if email is verified
-            userform_instance = userform.save(commit=False)
-            userprofile_form_instance = userprofile_form.save(commit=False)
-
+            # If already verified — update immediately
             if UserProfile.objects.filter(nida_number=request.POST.get("nida_number"))\
                                   .exclude(pk=userprofile_instance.pk).exists():
                 messages.info(request, f"NIDA number {request.POST.get('nida_number')} is already in use.")
                 return redirect("authentication:personalinformation")
+            
+            if UserProfile.objects.filter(phone_number=request.POST.get("phone_number"))\
+                                  .exclude(pk=userprofile_instance.pk).exists():
+                messages.info(request, f"Phone number {request.POST.get('phone_number')} is already in use.")
+                return redirect("authentication:personalinformation")
 
+            if User.objects.filter(username=request.POST.get('username'))\
+                                  .exclude(pk=user_instance.pk).exists():
+                messages.info(request, f"Username {request.POST.get('username')} is already in use.")
+                return redirect("authentication:personalinformation")
+
+            userform_instance = userform.save(commit=False)
+            userprofile_form_instance = userprofile_form.save(commit=False)
+
+            userform_instance.first_name = request.POST.get("first_name")
+            userform_instance.last_name = request.POST.get("last_name")
+            userform_instance.username = request.POST.get("username")
+            userform_instance.email = request.POST.get("username")
             userform_instance.save()
+            
             userprofile_form_instance.user = user_instance
             userprofile_form_instance.full_name = f"{userform_instance.first_name} {userform_instance.last_name}"
-            userprofile_form_instance.email = user_instance.email
+            userprofile_form_instance.email = userform_instance.email
             userprofile_form_instance.save()
 
             messages.success(request, "Profile updated successfully!")
@@ -254,6 +290,7 @@ def personalinformationview(request):
         messages.error(request, "Something went wrong. Please check the form.")
         return redirect("authentication:personalinformation")
 
+    # GET request
     userprofile_form = UserProfileForm(instance=userprofile_instance)
     userform = UserForm(instance=user_instance)
 
@@ -263,38 +300,76 @@ def personalinformationview(request):
         "userform": userform,
     })
 
-signer = Signer()  # You can use TimestampSigner if you want expiration support
 
-def verify_email_view(request, token):
+def verify_email(request, token):
     try:
-        # Step 1: Decode token (raises BadSignature if invalid)
-        email = signer.unsign(token)
+        # max_age=86400 seconds = 1 day expiry
+        data = signing.loads(token, max_age=86400)
+        user = User.objects.get(pk=data["user_pk"])
+        form_data = data["form_data"]
+
+        # Convert ISO string dates back to date objects
+        date_fields = ['date_of_birth', 'created_at', 'updated_at']  # add any other date fields here
+
+        for field in date_fields:
+            if field in form_data and form_data[field]:
+                try:
+                    form_data[field] = datetime.fromisoformat(form_data[field]).date()
+                except ValueError:
+                    form_data[field] = None
+
+        profile = UserProfile.objects.get(user=user)
+
+        # Check uniqueness before applying updates
+        if UserProfile.objects.filter(nida_number=form_data.get("nida_number"))\
+                              .exclude(pk=profile.pk).exists():
+            messages.error(request, f"NIDA number {form_data.get('nida_number')} is already in use.")
+            return redirect("authentication:personalinformation")
         
-        # Step 2: Find user
-        user = get_object_or_404(User, email=email)
-        userprofile = get_object_or_404(UserProfile, user=user)
+        if UserProfile.objects.filter(phone_number=form_data.get("phone_number"))\
+                              .exclude(pk=profile.pk).exists():
+            messages.error(request, f"Phone number {form_data.get('phone_number')} is already in use.")
+            return redirect("authentication:personalinformation")
 
-        # Step 3: Check and update email_verified
-        if userprofile.email_verified:
-            messages.info(request, "Your email is already verified.")
-        else:
-            userprofile.email_verified = True
-            userprofile.save()
-            messages.success(request, "Email verification successful!")
+        if User.objects.filter(username=form_data.get('username'))\
+                              .exclude(pk=user.pk).exists():
+            messages.error(request, f"Username {form_data.get('username')} is already in use.")
+            return redirect("authentication:personalinformation")
 
-    except BadSignature:
-        messages.error(request, "Invalid or tampered verification link.")
+        # Update User fields
+        user.first_name = form_data.get("first_name", user.first_name)
+        user.last_name = form_data.get("last_name", user.last_name)
+        user.username = form_data.get("username", user.username)
+        user.email = form_data.get("username", user.email)
+        user.save()
+
+        # Update UserProfile fields
+        for field, value in form_data.items():
+            if field in ["user", "email_verified", "is_active"]:
+                continue
+            if hasattr(profile, field):
+                setattr(profile, field, value)
+
+        profile.email_verified = True
+        profile.is_active = True
+        profile.save()
+
+        messages.success(request, "Email verified and profile updated successfully.")
+        return redirect("authentication:personalinformation")
+
     except User.DoesNotExist:
-        messages.error(request, "No user found with this email.")
+        messages.error(request, "Invalid user.")
     except UserProfile.DoesNotExist:
-        messages.error(request, "No user profile associated with this user.")
+        messages.error(request, "User profile not found.")
+    except SignatureExpired:
+        messages.error(request, "Verification link expired.")
+    except BadSignature:
+        messages.error(request, "Invalid verification link.")
+    except Exception as e:
+        messages.error(request, f"An error occurred: {e}")
 
     return redirect("authentication:personalinformation")
 
-def logoutview(request):
-    if request.method == "POST" and "logout_user_btn" in request.POST:
-        logout(request)
-        return redirect("authentication:auth")
 
 @cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
 @login_required
@@ -367,4 +442,8 @@ def updateuseraccountview(request, user_id):
         return redirect("authentication:accountsetting")
 
     return redirect("authentication:accountsetting")
-           
+
+def logoutview(request):
+    if request.method == "POST" and "logout_user_btn" in request.POST:
+        logout(request)
+        return redirect("authentication:auth")

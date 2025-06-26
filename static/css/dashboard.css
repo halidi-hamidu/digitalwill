@@ -28,6 +28,19 @@ table, tr, th,td{
 .swal2-container {
     z-index: 20000 !important;
 }
+/* dashboard.html */
+.dashboard-header {
+    margin: 30px 0;
+}
+.summary-card {
+    /* border-radius: 10px; */
+    color: white;
+    padding: 20px;
+    margin-bottom: 1.5rem;
+}
+.summary-icon {
+    font-size: 2rem;
+}
 /* Sidebar */
 .sidebar {
     position: fixed;

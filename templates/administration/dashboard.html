@@ -1,19 +1,156 @@
 {% extends '../layout.html' %}
 {% load static %}
+{% load humanize %}
 {% load widget_tweaks %}
 {% block title %}dashboard{% endblock %}
 
 {% block content %}
-
 <div class="row">
     <div class="col-md-12">
-        <div class="top-header">
-            <h2>Welcome Back!</h2>
-            <p>This is your secure space to manage your digital legacy, assets, and beneficiaries.</p>
-            <hr />
-            <p><strong>Tip:</strong> Always keep your will and beneficiaries updated for maximum clarity.</p>
+        <div class="profile-header">
+            <h4>Dashboard</h4>
         </div>
     </div>
 </div>
 
+<div class="row text-center">
+    <div class="col-md-3">
+        <div class="summary-card bg-primary">
+        <div><i class="fas fa-users summary-icon"></i></div>
+        <h4>{{ heirs|length }}</h4>
+        <p>Heirs</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="summary-card bg-success">
+        <div><i class="fas fa-box summary-icon"></i></div>
+        <h4>{{ assets|length }}</h4>
+        <p>Assets</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="summary-card bg-warning">
+        <div><i class="fas fa-key summary-icon"></i></div>
+        <h4>{{ special_accounts|length }}</h4>
+        <p>Special Accounts</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="summary-card bg-dark">
+        <div><i class="fas fa-dollar-sign summary-icon"></i></div>
+        <h4>{{ total_asset_value|intcomma }}</h4>
+        <p>Total Asset Value</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">Asset Distribution</div>
+            <div class="card-body">
+            <canvas id="assetChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">Special Account Distribution</div>
+            <div class="card-body">
+            <canvas id="accountChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">Confidential Information Distribution</div>
+            <div class="card-body">
+                <canvas id="confidentialInfoChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">Heir Distribution</div>
+            <div class="card-body">
+            <canvas id="heirChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+  // ASSET DISTRIBUTION
+  const assetData = {{ asset_distribution|safe }};
+  const assetLabels = assetData.map(item => item.asset_type || 'Unspecified');
+  const assetCounts = assetData.map(item => item.count);
+  new Chart(document.getElementById('assetChart'), {
+    type: 'doughnut',
+    data: {
+      labels: assetLabels,
+      datasets: [{
+        data: assetCounts,
+        backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6c757d']
+      }]
+    }
+  });
+
+  // HEIR DISTRIBUTION
+  const heirData = {{ heir_distribution|safe }};
+  const heirLabels = heirData.map(item => item.relationship || 'Other');
+  const heirCounts = heirData.map(item => item.count);
+  new Chart(document.getElementById('heirChart'), {
+    type: 'bar',
+    data: {
+      labels: heirLabels,
+      datasets: [{
+        label: 'Heirs',
+        data: heirCounts,
+        backgroundColor: '#6f42c1'
+      }]
+    }
+  });
+
+  // SPECIAL ACCOUNT DISTRIBUTION
+  const accountData = {{ account_distribution|safe }};
+  const accountLabels = accountData.map(item => item.account_type || 'Unspecified');
+  const accountCounts = accountData.map(item => item.count);
+  new Chart(document.getElementById('accountChart'), {
+    type: 'pie',
+    data: {
+      labels: accountLabels,
+      datasets: [{
+        data: accountCounts,
+        backgroundColor: ['#20c997', '#fd7e14', '#6610f2', '#e83e8c', '#17a2b8']
+      }]
+    }
+  });
+
+  // CONFIDENTIAL INFO DISTRIBUTION
+  const confidentialData = {{ confidential_distribution|safe }};
+  const confidentialLabels = confidentialData.map((_, idx) => `Doc ${idx + 1}`);
+  const confidentialCounts = confidentialData.map(item => item.assigned_count);
+  new Chart(document.getElementById('confidentialInfoChart'), {
+    type: 'line',
+    data: {
+      labels: confidentialLabels,
+      datasets: [{
+        label: 'Assigned Heirs',
+        data: confidentialCounts,
+        fill: false,
+        borderColor: '#198754',
+        tension: 0.1
+      }]
+    }
+  });
+
+  // Optional: Theme toggle (if used)
+  const toggleBtn = document.querySelector('.toggle-mode');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      const html = document.documentElement;
+      html.dataset.bsTheme = html.dataset.bsTheme === 'dark' ? 'light' : 'dark';
+    });
+  }
+</script>
 {% endblock %}

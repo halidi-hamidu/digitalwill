@@ -9,8 +9,8 @@
     <div class="col-md-12">
         <div class="profile-header">
             <h4>Personal Information</h4>
-            <button type="button" class="btn btn-sm edit-btn text-white" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
-            <i class="bi bi-pencil-square me-1" data-bs-toggle="modal" data-bs-target="#staticBackdrop"></i> Add Changes
+            <button type="button" class="btn btn-sm edit-btn text-white" data-bs-toggle="offcanvas" data-bs-target="#addPersonalInformationoffcanvas">
+            <i class="bi bi-pencil-square me-1"></i> Add Changes
             </button>
         </div>
     </div>
@@ -46,71 +46,90 @@
     </div>
 </div>
 
-<!-- Modal -->
-<div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5" id="staticBackdropLabel">Edit profile</h1>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-
-        <div class="modal-body">
-            <div class="profile_update_form">
-                <form action="" method="POST" autocomplete="off" enctype="multipart/form-data">
+<div class="offcanvas offcanvas-end w-100" data-bs-backdrop="static" tabindex="-1" id="addPersonalInformationoffcanvas" aria-labelledby="addPersonalInformationoffcanvasLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="addPersonalInformationoffcanvasLabel">Personal information</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <div>
+        <div class="profile_inner_content">
+            <p class="text-success">
+                Please review your details below to ensure everything is accurate before proceeding.
+            </p>
+            <div class="table-responsive">
+                <form action="" method="POST" enctype="multipart/form-data" autocomplete="off">
                     {% csrf_token %}
-                    <div class="mb-2 form-group">
-                        <label for="">Username</label>
-                        <input type="text" name="username" class="form-control input-sm" disabled="disabled" value="{{userprofile.user.username}}">
-                    </div>
-                    <div class="mb-2 form-group">
-                        <label for="">Firstname</label>
-                        {% render_field userform.first_name name="first_name" class="form-control input-sm" %}
-                    </div>
-                    <div class="mb-2 form-group">
-                        <label for="">Lastname</label>
-                        {% render_field userform.last_name name="first_name" class="form-control input-sm" %}
-                    </div>
-                    <div class="mb-2 form-group">
-                        <label for="">Fullname</label>
-                        {% render_field userprofile_form.full_name name="full_name" class="form-control input-sm" disabled="disabled" %}
-                    </div>
-                    <div class="mb-2 form-group">
-                        <label for="">Gender</label>
-                        {% render_field userprofile_form.gender name="gender" class="form-control input-sm" %}
-                    </div>
-                    <div class="mb-2 form-group">
-                        <label for="">Date of birth (DoB)</label>
-                        {% render_field userprofile_form.date_of_birth type="date" name="date_of_birth" class="form-control input-sm" %}
-                    </div>
-                    <div class="mb-2 form-group">
-                        <label for="">Phonenumber</label>
-                        {% render_field userprofile_form.phone_number name="phone_number" class="form-control input-sm" %}
-                    </div>
-                    <div class="mb-2 form-group">
-                        <label for="">Email</label>
-                        <input type="text" name="username" class="form-control input-sm" disabled="disabled" value="{{userprofile.user.username}}">
-                    </div>
-                    <div class="mb-2 form-group">
-                        <label for="">Nida Number</label>
-                        {% render_field userprofile_form.nida_number name="nida_number" class="form-control input-sm" %}
-                    </div>
-                    <div class="mb-2 form-group">
-                        <label for="">Address</label>
-                        {% render_field userprofile_form.address name="address" class="form-control input-sm" rows="3" style="resize:none" %}
-                    </div>
-                    <div class="mb-2 form-group">
-                        <label for="">Profile picture</label>
-                        {% render_field userprofile_form.profie_image name="profie_image" class="form-control input-sm" %}
-                    </div>
-                    <div class="form-roup d-flex justify-content-end gap-2">
-                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" name="update_user_profile_btn" class="btn btn-sm edit-btn"> Save changes</button>
-                    </div>
+                    <table class="table table-bordered table-striped123">
+                            <thead class="table-info">
+                                <tr>
+                                    <th colspan="4">Personal informations</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{userform.username}}
+                                <tr>
+                                    <td>Username: </td><td><input type="email" name="username" class="form-control input-sm" value="{{userprofile.user.username}}"></td>
+                                    <td>Firstname : </td><td><input type="text" name="first_name" class="form-control input-sm" value="{{user_account.first_name}}" style="width: 100%;"></td></td>
+                                </tr>
+                                <tr>
+                                    <td>Lastname : </td><td><input type="text" name="last_name" class="form-control input-sm" value="{{user_account.last_name}}" style="width: 100%;"></td></td>
+                                    <td>Fullname : </td><td><input type="text" readonly name="full_name" class="form-control input-sm" value="{{user_account.user_userprofile.full_name}}" style="width: 100%;"></td>
+                                </tr>
+                                <tr>
+                                    <td>Email : </td><td><input type="email" readonly name="email" class="form-control input-sm" value="{{userprofile.user.email}}" style="width: 100%;"></td>
+                                    <td>Gender : </td>
+                                    <td>
+                                        {% render_field userprofile_form.gender name="gender" class="form-control input-sm" %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Date of Birth : </td><td>{% render_field userprofile_form.date_of_birth type="date" name="date_of_birth" class="form-control input-sm" %}</td>
+                                    <td>Phonenumber: </td><td>{% render_field userprofile_form.phone_number name="phone_number" class="form-control input-sm" %}</td>
+                                </tr>
+                                <tr>
+                                    <td>Nida Number: </td><td>{% render_field userprofile_form.nida_number name="nida_number" class="form-control input-sm" %}</td>
+                                    <td>Address : </td><td>{% render_field userprofile_form.address name="address" class="form-control input-sm" rows="3" style="resize:none" %}</td>
+                                </tr>
+                                <tr>
+                                    <td>Profile Image: </td><td colspan="3">{% render_field userprofile_form.profie_image name="profie_image" class="form-control input-sm" %}</td>
+                                </tr>
+                            </tbody>
+
+                            <tbody>
+                                <tr>
+                                    <td>Action Button : </td><td><button type="submit" name="update_user_profile_btn" class="btn btn-sm edit-btn"> Save changes</button></td>
+                                </tr>
+                            </tbody>
+                    </table>
                 </form>
             </div>
         </div>
     </div>
   </div>
 </div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const firstNameInput = document.querySelector('input[name="first_name"]');
+        const lastNameInput = document.querySelector('input[name="last_name"]');
+        const fullNameInput = document.querySelector('input[name="full_name"]');
+        const usernameInput = document.querySelector('input[name="username"]');
+        const emailInput = document.querySelector('input[name="email"]');
+
+        function updateFullName() {
+            const firstName = firstNameInput.value.trim();
+            const lastName = lastNameInput.value.trim();
+            fullNameInput.value = `${firstName} ${lastName}`;
+        }
+
+        function updateEmail() {
+            const username = usernameInput.value.trim();
+            emailInput.value = `${username}`; // Customize your domain here
+        }
+
+        firstNameInput.addEventListener("keyup", updateFullName);
+        lastNameInput.addEventListener("keyup", updateFullName);
+        usernameInput.addEventListener("keyup", updateEmail);
+    });
+</script>
 {% endblock %}

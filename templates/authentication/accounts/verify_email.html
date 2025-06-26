@@ -1,10 +1,12 @@
-Hello {{ user }},
-
-Thank you for registering! Please verify your email address by clicking the link below:
-
-Verify Email: {{ verification_link }}
-
-If the link doesn't work, copy and paste this URL into your browser:
-{{ verification_link }}
-
-Thank you!
+<p>Hi {{ user }},</p>
+<p>Thank you for registering! Please click the button below to verify your email address:</p>
+<p style="margin-top: 20px;">
+    <a href="{{ verification_link }}" style="padding: 10px 15px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">
+        Verify Email
+    </a>
+</p>
+<p>If the button doesn't work, you can also copy and paste this link into your browser:</p>
+<p><a href="{{ verification_link }}">{{ verification_link }}</a></p>
+<br>
+<p>Thanks,</p>
+<p>Your Website Team</p>

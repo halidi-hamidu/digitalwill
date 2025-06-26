@@ -22,7 +22,8 @@
                 <button type="submit" name="login_user_btn" class="btn btn-orange">Login</button>
             </div>
             <div class="text-center mt-3">
-                <small>Don't have an account? <a href="{% url 'authentication:registration' %}">Register here</a></small>
+                <small>Don't have an account? <a href="{% url 'authentication:registration' %}">Register here</a></small><br>
+                <small>Forget password click <a href="{% url 'authentication:password_reset' %}">Reset password</a></small>
             </div>
         </form>
     </div>
