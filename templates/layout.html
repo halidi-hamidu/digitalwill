@@ -28,7 +28,9 @@
         <a href="{% url 'authentication:personalinformation' %}"><i class="bi bi-person-circle"></i> Personal Information</a>
         <a href="{% url 'administration:digitalwill' %}"><i class="bi bi-file-earmark-text me-2"></i> Digital Wills</a>
         <a href="{% url 'administration:beneficiary' %}"><i class="bi bi-people-fill me-2"></i> Beneficiaries</a>
+        {% if request.user.user_userprofile.roles == 'Admin' %}
         <a href="{% url 'authentication:accountsetting' %}"><i class="bi bi-gear-fill me-2"></i> Account Settings</a>
+        {% endif %}
         <a href="" data-bs-toggle="modal" data-bs-target="#logoutModel"><i class="bi bi-box-arrow-right me-2"></i> Logout</a>
     </div>
 

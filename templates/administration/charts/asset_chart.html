@@ -1,0 +1,50 @@
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="card shadow-sm">
+  <div class="card-header bg-primary text-white">
+    <h5 class="mb-0"><i class="bi bi-bar-chart-line-fill me-2"></i>Asset Value by Type</h5>
+  </div>
+  <div class="card-body">
+    <canvas id="assetBarChart" height="100"></canvas>
+  </div>
+</div>
+
+<script>
+  const ctx = document.getElementById('assetBarChart').getContext('2d');
+  const assetBarChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: {{ labels|safe }},
+      datasets: [{
+        label: 'Total Value (₦)',
+        data: {{ data|safe }},
+        backgroundColor: 'rgba(13, 110, 253, 0.6)',
+        borderColor: 'rgba(13, 110, 253, 1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return '₦' + value.toLocaleString();
+            }
+          }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return '₦' + context.parsed.y.toLocaleString();
+            }
+          }
+        }
+      }
+    }
+  });
+</script>

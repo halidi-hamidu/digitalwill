@@ -24,7 +24,7 @@
                 <table class="table table-bordered table-striped123">
                         <tbody>
                         <tr>
-                            <td>Name : </td><td>{{userprofile.user.first_name}} {{userprofile.user.last_name}}</td>
+                            <td>Name : </td><td>{{userprofile.user.first_name|title}} {{userprofile.user.last_name|title}}</td>
                             <td>Gender : </td><td>{{userprofile.gender}}</td>
                         </tr>
                         <tr>
@@ -70,11 +70,11 @@
                                 {{userform.username}}
                                 <tr>
                                     <td>Username: </td><td><input type="email" name="username" class="form-control input-sm" value="{{userprofile.user.username}}"></td>
-                                    <td>Firstname : </td><td><input type="text" name="first_name" class="form-control input-sm" value="{{user_account.first_name}}" style="width: 100%;"></td></td>
+                                    <td>Firstname : </td><td><input type="text" name="first_name" class="form-control input-sm" value="{{user_instance.first_name}}" style="width: 100%;"></td></td>
                                 </tr>
                                 <tr>
-                                    <td>Lastname : </td><td><input type="text" name="last_name" class="form-control input-sm" value="{{user_account.last_name}}" style="width: 100%;"></td></td>
-                                    <td>Fullname : </td><td><input type="text" readonly name="full_name" class="form-control input-sm" value="{{user_account.user_userprofile.full_name}}" style="width: 100%;"></td>
+                                    <td>Lastname : </td><td><input type="text" name="last_name" class="form-control input-sm" value="{{user_instance.last_name}}" style="width: 100%;"></td></td>
+                                    <td>Fullname : </td><td><input type="text" readonly name="full_name" class="form-control input-sm" value="{{user_instance.user_userprofile.full_name}}" style="width: 100%;"></td>
                                 </tr>
                                 <tr>
                                     <td>Email : </td><td><input type="email" readonly name="email" class="form-control input-sm" value="{{userprofile.user.email}}" style="width: 100%;"></td>

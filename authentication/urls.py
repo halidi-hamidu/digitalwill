@@ -14,7 +14,7 @@ urlpatterns = [
     path("verify-email/<token>/", views.verify_email, name="verify_email"),
 
     path("account-settings/", views.accountsettingview, name="accountsetting"),
-    path("account-settings/delete/<str:user_id>/", views.deleteuseraccountview, name="deleteuseraccount"),
+    path("account-settings/delete/user/<str:user_id>/", views.deleteuseraccountview, name="deleteuseraccount"),
     path("account-settings/update/<str:user_id>/", views.updateuseraccountview, name="updateuseraccount"),
 
     # Password reset

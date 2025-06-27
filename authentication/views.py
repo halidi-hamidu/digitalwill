@@ -168,7 +168,7 @@ def loginview(request):
             login(request, authenticated_user)
             messages.success(request, f"Login successful, welcome {request.POST.get("username")}")
             return redirect("administration:dashboard")
-        messages.success(request, f"User does not exist, try again")
+        messages.info(request, f"User does not exist, try again")
         return redirect("authentication:auth")
     login_form = AuthenticationForm()
     templates = "authentication/login.html"
@@ -298,6 +298,7 @@ def personalinformationview(request):
         "userprofile_form": userprofile_form,
         "userprofile": userprofile_instance,
         "userform": userform,
+        "user_instance":user_instance
     })
 
 
@@ -377,7 +378,8 @@ def accountsettingview(request):
     user_accounts = get_user_model().objects.all().order_by("-id")
     templates = "authentication/account_setting.html"
     context = {
-        "user_accounts":user_accounts
+        "user_accounts":user_accounts,
+        # "userprofileform":userprofileform
     }
     return render(request, templates, context)
 
@@ -415,6 +417,22 @@ def updateuseraccountview(request, user_id):
             else:
                 userprofile_instance.roles = "Testator"
                 get_user.is_superuser = False
+            print(f"################################")
+            print(f"{request.POST.get("updateuseraccount")}")
+            if not request.POST.get("manageuseraccount") == "on":
+                userprofile_instance.manageuseraccount = False
+            else:
+                userprofile_instance.manageuseraccount = True
+
+            if not request.POST.get("updateuseraccount") == "on":
+                userprofile_instance.updateuseraccount = False
+            else:
+                userprofile_instance.updateuseraccount = True
+            
+            if not request.POST.get("viewuseraccount") == "on":
+                userprofile_instance.viewuseraccount = False
+            else:
+                userprofile_instance.viewuseraccount = True
 
             userprofile_instance.phone_number = request.POST.get("phone_number", "")
             userprofile_instance.email = get_user.email

@@ -88,6 +88,27 @@ def verify_heir_view(request, token):
 
     return redirect("administration:digitalwill")
 
+def asset_summary_chart(request):
+    user = request.user.userprofile
+
+    # Group asset values by asset_type
+    asset_data = (
+        Asset.objects.filter(testator=user)
+        .values('asset_type')
+        .annotate(total_value=Sum('estimated_value'))
+        .order_by('-total_value')
+    )
+
+    labels = [item['asset_type'] or "Unknown" for item in asset_data]
+    data = [float(item['total_value']) for item in asset_data]
+
+    context = {
+        'labels': labels,
+        'data': data,
+    }
+
+    return render(request, 'administration/charts/asset_chart.html', context)
+
 @cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
 @login_required
 def verify_asset_view(request, token):
@@ -522,7 +543,19 @@ def dashboardview(request):
         confidential_infos.annotate(assigned_count=Count('assigned_to')).values('assigned_count')
     )
 
+    asset_data = (
+        Asset.objects.filter(testator=request.user.user_userprofile)
+        .values('asset_type')
+        .annotate(total_value=Sum('estimated_value'))
+        .order_by('-total_value')
+    )
+
+    labels = [item['asset_type'] or "Unknown" for item in asset_data]
+    data = [float(item['total_value']) for item in asset_data]
+
     context = {
+        'labels': labels,
+        'data': data,
         'heirs': heirs,
         'assets': assets,
         'special_accounts': special_accounts,
@@ -532,6 +565,15 @@ def dashboardview(request):
         'heir_distribution': heir_distribution,
         'account_distribution': account_distribution,
         'confidential_distribution': confidential_distribution,
+        # counter
+        "heir_count": Heir.objects.all().count(),
+        "asset_count": Asset.objects.all().count(),
+        "confidential_info_count": ConfidentialInfo.objects.all().count(),
+        "executor_assigned": Executor.objects.all().exists(),
+        "audio_instruction_count": AudioInstruction.objects.all().count(),
+        "special_account_count": SpecialAccount.objects.all().count(),
+        "pending_verifications": PendingHeirVerification.objects.all().count(),
+        "post_death_instructions": PostDeathInstruction.objects.all().exists(),
     }
 
     return render(request, 'administration/dashboard.html', context)

@@ -9,9 +9,6 @@
     <div class="col-md-12">
         <div class="profile-header">
             <h4>Account Settings</h4>
-            <!-- <button type="button" class="btn btn-sm edit-btn text-white" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
-            <i class="bi bi-pencil-square me-1" data-bs-toggle="modal" data-bs-target="#staticBackdrop"></i> Add User
-            </button> -->
         </div>
     </div>
 </div>
@@ -27,7 +24,6 @@
                                 <th>SN</th>
                                 <th>ID</th>
                                 <th>Username</th>
-                                <!-- <th>Email</th> -->
                                 <th>Roles</th>
                                 <th>Created At</th>
                                 <th>Last Login</th>
@@ -47,7 +43,6 @@
                                             {% endif %}
                                         </td>
                                         <td>{{user_account.username}}</td>
-                                        <!-- <td>{{user_account.email}}</td> -->
                                         <td>
                                             {% if not user_account.is_superuser %}
                                                 <span class="badge text-bg-info">Testator</span>
@@ -58,9 +53,30 @@
                                         <td>{{user_account.date_joined}}</td>
                                         <td>{{user_account.last_login}}</td>
                                         <td>
-                                            <a href="" data-bs-toggle="offcanvas" data-bs-target="#updateuserAccountDetailsViewoffcanvas{{user_account.id}}"><i class="bi bi-pencil-square"></i></a>
-                                            <a href="" data-bs-toggle="modal" data-bs-target="#deleteUserAccountModel{{ user_account.id }}"><i class="bi bi-trash"></i></a>
-                                            <a href="" data-bs-toggle="offcanvas" data-bs-target="#userAccountDetailsViewoffcanvas{{user_account.id}}"><i class="bi bi-eye"></i></a>
+
+                                            {% if request.user.user_userprofile.roles == "Admin" and request.user.user_userprofile.manageuseraccount %}
+                                                <a href="" data-bs-toggle="offcanvas" data-bs-target="#updateuserAccountDetailsViewoffcanvas{{user_account.id}}"><i class="bi bi-pencil-square"></i></a>
+                                                <a href="" data-bs-toggle="modal" data-bs-target="#deleteUserAccountModel{{ user_account.id }}"><i class="bi bi-trash"></i></a>
+                                                <a href="" data-bs-toggle="offcanvas" data-bs-target="#userAccountDetailsViewoffcanvas{{user_account.id}}"><i class="bi bi-eye"></i></a>
+                                            {% elif request.user.user_userprofile.roles == "Admin" and request.user.user_userprofile.manageuseraccount and request.user.user_userprofile.updateuseraccount and request.user.user_userprofile.viewuseraccount %}
+                                                <a href="" data-bs-toggle="offcanvas" data-bs-target="#updateuserAccountDetailsViewoffcanvas{{user_account.id}}"><i class="bi bi-pencil-square"></i></a>
+                                                <a href="" data-bs-toggle="modal" data-bs-target="#deleteUserAccountModel{{ user_account.id }}"><i class="bi bi-trash"></i></a>
+                                                <a href="" data-bs-toggle="offcanvas" data-bs-target="#userAccountDetailsViewoffcanvas{{user_account.id}}"><i class="bi bi-eye"></i></a>
+                                            {% elif request.user.user_userprofile.roles == "Admin" and request.user.user_userprofile.manageuseraccount and request.user.user_userprofile.updateuseraccount %}
+                                                <a href="" data-bs-toggle="offcanvas" data-bs-target="#updateuserAccountDetailsViewoffcanvas{{user_account.id}}"><i class="bi bi-pencil-square"></i></a>
+                                                <a href="" data-bs-toggle="modal" data-bs-target="#deleteUserAccountModel{{ user_account.id }}"><i class="bi bi-trash"></i></a>
+                                                <a href="" data-bs-toggle="offcanvas" data-bs-target="#userAccountDetailsViewoffcanvas{{user_account.id}}"><i class="bi bi-eye"></i></a>
+                                            {% elif request.user.user_userprofile.roles == "Admin" and request.user.user_userprofile.manageuseraccount and request.user.user_userprofile.viewuseraccount %}
+                                                <a href="" data-bs-toggle="offcanvas" data-bs-target="#updateuserAccountDetailsViewoffcanvas{{user_account.id}}"><i class="bi bi-pencil-square"></i></a>
+                                                <a href="" data-bs-toggle="modal" data-bs-target="#deleteUserAccountModel{{ user_account.id }}"><i class="bi bi-trash"></i></a>
+                                                <a href="" data-bs-toggle="offcanvas" data-bs-target="#userAccountDetailsViewoffcanvas{{user_account.id}}"><i class="bi bi-eye"></i></a>
+                                            {% elif request.user.user_userprofile.roles == "Admin" and request.user.user_userprofile.updateuseraccount and request.user.user_userprofile.viewuseraccount %}
+                                                <a href="" data-bs-toggle="offcanvas" data-bs-target="#updateuserAccountDetailsViewoffcanvas{{user_account.id}}"><i class="bi bi-pencil-square"></i></a>
+                                                <a href="" data-bs-toggle="modal" data-bs-target="#deleteUserAccountModel{{ user_account.id }}"><i class="bi bi-trash"></i></a>
+                                                <a href="" data-bs-toggle="offcanvas" data-bs-target="#userAccountDetailsViewoffcanvas{{user_account.id}}"><i class="bi bi-eye"></i></a>
+                                            {% else %}
+                                                <a href="" data-bs-toggle="offcanvas" data-bs-target="#userAccountDetailsViewoffcanvas{{user_account.id}}"><i class="bi bi-eye"></i></a>
+                                            {% endif %}
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -120,6 +136,13 @@
                                     <td>Nida Number: </td><td><input type="number" name="nida_number" value="{{user_account.user_userprofile.nida_number}}" style="width: 100%;"></td>
                                     <td>Address : </td><td><input type="text" name="address" value="{{user_account.user_userprofile.address}}" style="width: 100%;"></td>
                                 </tr>
+                            <thead class="table-secondary">
+                                <tr>
+                                    <th colspan="4">Roles & Permissions</th>
+                                </tr>
+                            </thead>
+                            
+                            <tbody>
                                 <tr>
                                     <td>Roles: </td><td>
                                         <select name="roles" id="roles" style="width: 100%;">
@@ -129,6 +152,17 @@
                                         </select>
                                     </td>
                                 </tr>
+                                <tr>
+                                    <!-- <td>Manage user account: </td><td><input type="checkbox" name="manageuseraccount" id="manageuseraccount" {% if user_account.user_userprofile.manageuseraccount %}value="on"{% else %}value="off"{% endif %}> <span class="text-success ">Create, Read, Update, Delete (Full Permission)</span></td> -->
+                                    <td>Manage user account: </td><td><input type="checkbox" name="manageuseraccount" id="manageuseraccount" {% if user_account.user_userprofile.manageuseraccount %}checked{% endif %}> <span class="text-success ">Create, Read, Update, Delete (Full Permission)</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Update user account: </td><td><input type="checkbox" name="updateuseraccount" id="updateuseraccount" {% if user_account.user_userprofile.updateuseraccount %}checked{% endif %}> <span class="text-success ">Update only (Limited Permission)</span></td>
+                                </tr>
+                                <tr>
+                                    <td>View user account: </td><td><input type="checkbox" name="viewuseraccount" id="viewuseraccount" {% if user_account.user_userprofile.viewuseraccount %}checked{% endif %}> <span class="text-success ">View only (Limited Permission)</span></td>
+                                </tr>
+                            </tbody>
                             </tbody>
                             <thead class="table-warning">
                                 <tr>

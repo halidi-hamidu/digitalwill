@@ -1,6 +1,6 @@
 :root {
     --main-orange: #e65100;
-    --main-orange-hover: #572002;
+    --main-orange-hover: #792a00;
     --sidebar-width: 250px;
 }
 
@@ -9,6 +9,11 @@ body {
     font-family: "Montserrat", sans-serif;
     background-color: #f5f5f5;
 }
+
+.card{
+    border-radius: 0px;
+}
+
 table, tr, th,td{
     white-space: nowrap;
 }
@@ -32,16 +37,25 @@ table, tr, th,td{
 .dashboard-header {
     margin: 30px 0;
 }
+
 .summary-card {
-    /* border-radius: 10px; */
-    color: white;
     padding: 20px;
-    margin-bottom: 1.5rem;
+    /* border-radius: 0.5rem; */
+    color: white;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out;
 }
+
+/* .summary-card:hover {
+    transform: translateY(-5px);
+} */
+
 .summary-icon {
     font-size: 2rem;
+    margin-bottom: 10px;
 }
-/* Sidebar */
+
 .sidebar {
     position: fixed;
     top: 0;

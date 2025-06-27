@@ -13,71 +13,108 @@
     </div>
 </div>
 
-<div class="row text-center">
-    <div class="col-md-3">
-        <div class="summary-card bg-primary">
-        <div><i class="fas fa-users summary-icon"></i></div>
-        <h4>{{ heirs|length }}</h4>
-        <p>Heirs</p>
-        </div>
+{% if request.user.user_userprofile.roles == "Admin" and request.user.is_superuser or request.user.is_staff %}
+<div class="row">
+  <div class="col-md-3 mb-2">
+    <div class="card text-white bg-info">
+      <div class="card-body text-center">
+        <i class="bi bi-people-fill display-4"></i>
+        <h5 class="card-title mt-2">Heirs</h5>
+        <p class="card-text">{{ heir_count }}</p>
+      </div>
     </div>
-    <div class="col-md-3">
-        <div class="summary-card bg-success">
-        <div><i class="fas fa-box summary-icon"></i></div>
-        <h4>{{ assets|length }}</h4>
-        <p>Assets</p>
-        </div>
+  </div>
+
+  <div class="col-md-3 mb-2">
+    <div class="card text-white bg-info">
+      <div class="card-body text-center">
+        <i class="bi bi-box-seam display-4"></i>
+        <h5 class="card-title mt-2">Assets</h5>
+        <p class="card-text">{{ asset_count }}</p>
+      </div>
     </div>
-    <div class="col-md-3">
-        <div class="summary-card bg-warning">
-        <div><i class="fas fa-key summary-icon"></i></div>
-        <h4>{{ special_accounts|length }}</h4>
-        <p>Special Accounts</p>
-        </div>
+  </div>
+
+  <div class="col-md-3 mb-2">
+    <div class="card text-white bg-info">
+      <div class="card-body text-center">
+        <i class="bi bi-lock-fill display-4"></i>
+        <h5 class="card-title mt-2">Confidential Info</h5>
+        <p class="card-text">{{ confidential_info_count }}</p>
+      </div>
     </div>
-    <div class="col-md-3">
-        <div class="summary-card bg-dark">
-        <div><i class="fas fa-dollar-sign summary-icon"></i></div>
-        <h4>{{ total_asset_value|intcomma }}</h4>
-        <p>Total Asset Value</p>
-        </div>
+  </div>
+
+  <div class="col-md-3 mb-2">
+    <div class="card text-white bg-info">
+      <div class="card-body text-center">
+        <i class="bi bi-soundwave display-4"></i>
+        <h5 class="card-title mt-2">Audio Instructions</h5>
+        <p class="card-text">{{ audio_instruction_count }}</p>
+      </div>
     </div>
+  </div>
 </div>
 
 <div class="row">
-    <div class="col-md-3">
-        <div class="card mb-4">
-            <div class="card-header bg-info text-white">Asset Distribution</div>
-            <div class="card-body">
-            <canvas id="assetChart" height="100"></canvas>
-            </div>
-        </div>
+  <div class="col-md-12">
+    <div class="card shadow-sm mb-4">
+      <!-- <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-bar-chart-fill me-2"></i>Dashboard Summary</h5>
+        <small class="text-white-50">Latest snapshot</small>
+      </div> -->
+      <div class="card-body">
+        <canvas id="summaryBarChart" height="100"></canvas>
+      </div>
     </div>
-    <div class="col-md-3">
-        <div class="card mb-4">
-            <div class="card-header bg-info text-white">Special Account Distribution</div>
-            <div class="card-body">
-            <canvas id="accountChart" height="100"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card mb-4">
-            <div class="card-header bg-info text-white">Confidential Information Distribution</div>
-            <div class="card-body">
-                <canvas id="confidentialInfoChart" height="100"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card mb-4">
-            <div class="card-header bg-info text-white">Heir Distribution</div>
-            <div class="card-body">
-            <canvas id="heirChart" height="100"></canvas>
-            </div>
-        </div>
-    </div>
+  </div>
 </div>
+
+{% else %}
+<div class="row text-center">
+  <div class="col-md-3">
+    <div class="summary-card bg-info">
+      <div><i class="bi bi-people-fill summary-icon"></i></div>
+      <h4>{{ heirs|length }}</h4>
+      <p>Heirs</p>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="summary-card bg-info">
+      <div><i class="bi bi-box-fill summary-icon"></i></div>
+      <h4>{{ assets|length }}</h4>
+      <p>Assets</p>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="summary-card bg-info">
+      <div><i class="bi bi-wallet2 summary-icon"></i></div>
+      <h4>{{ special_accounts|length }}</h4>
+      <p>Special Accounts</p>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="summary-card bg-info">
+      <div><i class="bi bi-currency-dollar summary-icon"></i></div>
+      <h4>{{ total_asset_value|intcomma }}</h4>
+      <p>Total Asset Value</p>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-12">
+    <div class="card shadow-sm">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-bar-chart-line-fill me-2"></i>Asset Value by Type</h5>
+      </div>
+      <div class="card-body">
+        <canvas id="assetBarChart" height="100"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
 
 <script>
   // ASSET DISTRIBUTION
@@ -152,5 +189,99 @@
       html.dataset.bsTheme = html.dataset.bsTheme === 'dark' ? 'light' : 'dark';
     });
   }
+</script>
+
+<!-- bar graph admin dashboard-->
+<script>
+  const ctx = document.getElementById('summaryBarChart').getContext('2d');
+  const summaryBarChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Heirs', 'Assets', 'Confidential Info', 'Audio Instructions'],
+      datasets: [{
+        label: 'Total Count',
+        data: [
+          {{ heir_count }},
+          {{ asset_count }},
+          {{ confidential_info_count }},
+          {{ audio_instruction_count }}
+        ],
+        backgroundColor: [
+          'rgba(0, 123, 255, 0.7)',
+          'rgba(40, 167, 69, 0.7)',
+          'rgba(255, 193, 7, 0.7)',
+          'rgba(220, 53, 69, 0.7)'
+        ],
+        borderColor: [
+          'rgba(0, 123, 255, 1)',
+          'rgba(40, 167, 69, 1)',
+          'rgba(255, 193, 7, 1)',
+          'rgba(220, 53, 69, 1)'
+        ],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          stepSize: 1
+        }
+      },
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return ' ' + context.parsed.y + ' item(s)';
+            }
+          }
+        }
+      }
+    }
+  });
+</script>
+
+<!-- bar graph non-superuser -->
+<script>
+  const ctx2 = document.getElementById('assetBarChart').getContext('2d');
+  const assetBarChart = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: {{ labels|safe }},
+      datasets: [{
+        label: 'Total Value (Tzs)',
+        data: {{ data|safe }},
+        backgroundColor: 'rgba(13, 110, 253, 0.6)',
+        borderColor: 'rgba(13, 110, 253, 1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return 'Tzs' +" "+ value.toLocaleString();
+            }
+          }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return 'Tzs' +" "+ context.parsed.y.toLocaleString();
+            }
+          }
+        }
+      }
+    }
+  });
 </script>
 {% endblock %}
