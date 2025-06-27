@@ -1317,13 +1317,51 @@ def confirm_delete_special_account(request, token):
     token_obj.save()
 
     # Generate a PDF confirmation of deletion
-    buffer = io.BytesIO()
-    p = canvas.Canvas(buffer, pagesize=letter)
-    p.drawString(100, 700, "Special Account Deletion Confirmation")
-    p.drawString(100, 675, f"Account Name: {account_name}")
-    p.drawString(100, 650, f"Deleted By: {testator.full_name}")
-    p.drawString(100, 625, f"Date: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    p.drawString(100, 600, "This confirms that the above special account was deleted successfully.")
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+
+    # 🟧 Header Branding
+    p.setFillColor(colors.orange)
+    p.setFont("Helvetica-Bold", 24)
+    p.drawString(50, height - 50, "🧾 Digital Will")
+    p.setStrokeColor(colors.orange)
+    p.setLineWidth(2)
+    p.line(50, height - 60, width - 50, height - 60)
+
+    # 📝 Subtitle
+    p.setFillColor(colors.black)
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(50, height - 100, "Special Account Deletion Confirmation")
+
+    # 🧾 Data Table
+    table_data = [
+        ["Account Name", account_name],
+        ["Deleted By", testator.full_name],
+        ["Date", timezone.now().strftime('%Y-%m-%d %H:%M:%S')],
+        ["Confirmation", "The above special account was deleted successfully."]
+    ]
+
+    table = Table(table_data, colWidths=[180, 320])
+    table.setStyle(TableStyle([
+        ("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.orange),
+        ("TEXTCOLOR", (0, 0), (-1, -1), colors.black),
+        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 0), (-1, -1), 12),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+    ]))
+
+    # 🖨️ Draw the table on the canvas
+    table.wrapOn(p, width, height)
+    table.drawOn(p, 50, height - 280)
+
+    # 🔻 Footer with ISO
+    p.setFont("Helvetica-Oblique", 10)
+    p.setFillColor(colors.orange)
+    p.drawRightString(width - 50, 30, "ISO 1496177")
+
     p.showPage()
     p.save()
     buffer.seek(0)

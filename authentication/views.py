@@ -47,6 +47,12 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.platypus import Table, TableStyle, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+
 class CustomPasswordResetView(PasswordResetView):
     template_name = 'authentication/registration/password_reset_form.html'
     email_template_name = 'authentication/registration/password_reset_email.html'
@@ -129,7 +135,7 @@ def registerview(request):
             messages.success(request, "Registration successful! Please check your email to verify.")
             return redirect("authentication:registration")
         else:
-            messages.error(request, "❌ Invalid registration. Please check the form.")
+            messages.error(request, "Invalid registration. Please check the form.")
             return redirect("authentication:registration")
 
     # GET request
@@ -152,7 +158,7 @@ def verify_email_view(request, uidb64, token):
             profile.save()
             messages.success(request, "Email verified successfully! You can now log in.")
         else:
-            messages.info(request, "ℹEmail is already verified.")
+            messages.info(request, "Email is already verified.")
     else:
         messages.error(request, "Invalid or expired verification link.")
 
@@ -181,22 +187,61 @@ def verify_failed(request):
     return render(request, "authentication/verify_failed.html")
 
 signer = Signer()
+
 def generate_user_pdf(user, profile):
     buffer = BytesIO()
-    p = canvas.Canvas(buffer)
-    
-    p.setFont("Helvetica", 12)
-    p.drawString(100, 800, "User Profile Details")
-    p.drawString(100, 780, f"Full Name: {profile.full_name}")
-    p.drawString(100, 760, f"Email: {user.email}")
-    p.drawString(100, 740, f"Gender: {profile.gender}")
-    p.drawString(100, 720, f"Date of Birth: {profile.date_of_birth}")
-    p.drawString(100, 700, f"Phone: {profile.phone_number}")
-    p.drawString(100, 680, f"NIDA Number: {profile.nida_number}")
-    p.drawString(100, 660, f"Address: {profile.address}")
-    p.drawString(100, 640, f"Role: {profile.roles}")
-    p.drawString(100, 620, f"Email Verified: {profile.email_verified}")
-    
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+
+    # Title & Logo section
+    p.setFillColor(colors.orange)
+    p.setFont("Helvetica-Bold", 24)
+    p.drawString(50, height - 50, "🧾 Digital Will")
+    p.setStrokeColor(colors.orange)
+    p.setLineWidth(2)
+    p.line(50, height - 60, width - 50, height - 60)
+
+    # Subtitle
+    p.setFillColor(colors.black)
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(50, height - 100, "User Profile Details")
+
+    # User info table data
+    data = [
+        ["Full Name", profile.full_name],
+        ["Email", user.email],
+        ["Gender", profile.gender],
+        ["Date of Birth", str(profile.date_of_birth)],
+        ["Phone", profile.phone_number],
+        ["NIDA Number", profile.nida_number],
+        ["Address", profile.address],
+        ["Role", ", ".join(profile.roles) if isinstance(profile.roles, list) else profile.roles],
+        ["Email Verified", str(profile.email_verified)],
+    ]
+
+    # Table setup
+    table = Table(data, colWidths=[120, 350])
+    style = TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.orange),
+        ("TEXTCOLOR", (0, 0), (-1, -1), colors.black),
+        ("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.orange),
+        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 0), (-1, -1), 12),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+    ])
+    table.setStyle(style)
+
+    # Drawing the table
+    table.wrapOn(p, width, height)
+    table.drawOn(p, 50, height - 400)
+
+    # ISO Footer
+    p.setFont("Helvetica-Oblique", 10)
+    p.setFillColor(colors.orange)
+    p.drawRightString(width - 50, 30, "ISO 1496177")
+
     p.showPage()
     p.save()
     buffer.seek(0)

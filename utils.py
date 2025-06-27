@@ -12,6 +12,11 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from django.core.signing import TimestampSigner
+from datetime import datetime, date
+
+from reportlab.lib import colors
+from reportlab.platypus import Table, TableStyle
+from reportlab.lib.utils import simpleSplit
 
 def generate_pdf_from_template(template_name, context):
     template = get_template(template_name)
@@ -24,27 +29,68 @@ def generate_pdf_from_template(template_name, context):
 
 def generate_confidential_info_pdf(data, testator_name):
     buffer = BytesIO()
-    p = canvas.Canvas(buffer, pagesize=letter)
-    width, height = letter
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
 
-    # Logo (if exists)
+    # Logo (optional)
     logo_path = os.path.join(settings.BASE_DIR, 'static/images/logo.png')
     if os.path.exists(logo_path):
         logo = ImageReader(logo_path)
-        p.drawImage(logo, 40, height - 80, width=120, height=50, mask='auto')
+        p.drawImage(logo, 50, height - 90, width=100, height=40, mask='auto')
 
+    # Title & Branding
+    p.setFillColor(colors.orange)
+    p.setFont("Helvetica-Bold", 24)
+    p.drawString(160, height - 50, "🧾 Digital Will")
+    p.setStrokeColor(colors.orange)
+    p.setLineWidth(2)
+    p.line(50, height - 60, width - 50, height - 60)
+
+    # Subtitle
+    p.setFillColor(colors.black)
     p.setFont("Helvetica-Bold", 16)
-    p.drawString(180, height - 50, "Confidential Info Verification")
+    p.drawString(50, height - 100, "Confidential Info Verification")
+
+    # Summary Table
+    table_data = [
+        ["Assigned To (Heir ID)", data.get("assigned_to_id", "N/A")],
+        ["Testator", testator_name],
+        ["Date", str(date.today())]
+    ]
+    table = Table(table_data, colWidths=[180, 320])
+    table.setStyle(TableStyle([
+        ("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.orange),
+        ("TEXTCOLOR", (0, 0), (-1, -1), colors.black),
+        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 0), (-1, -1), 12),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+    ]))
+    table.wrapOn(p, width, height)
+    table.drawOn(p, 50, height - 220)
+
+    # Instructions Section
+    p.setFont("Helvetica-Bold", 12)
+    p.drawString(50, height - 260, "Instructions:")
 
     p.setFont("Helvetica", 12)
-    y = height - 120
-    p.drawString(40, y, f"Assigned To (Heir ID): {data.get('assigned_to_id')}")
-    y -= 20
-    p.drawString(40, y, f"Testator: {testator_name}")
-    y -= 20
-    p.drawString(40, y, f"Instructions:")
-    y -= 40
-    p.drawString(60, y, data.get('instructions', '')[:400])  # truncate if long
+    instruction_text = data.get("instructions", "No instructions provided.")
+    wrapped_lines = simpleSplit(instruction_text, "Helvetica", 12, width - 100)
+
+    y_position = height - 280
+    for line in wrapped_lines:
+        if y_position < 60:
+            p.showPage()
+            p.setFont("Helvetica", 12)
+            y_position = height - 60
+        p.drawString(50, y_position, line)
+        y_position -= 18
+
+    # Footer
+    p.setFont("Helvetica-Oblique", 10)
+    p.setFillColor(colors.orange)
+    p.drawRightString(width - 50, 30, "ISO 1496177")
 
     p.showPage()
     p.save()
@@ -54,26 +100,58 @@ def generate_confidential_info_pdf(data, testator_name):
 # GENERATE SPECIAL ACCOUNT PDF
 def generate_special_account_pdf(data, testator_name):
     buffer = BytesIO()
-    p = canvas.Canvas(buffer, pagesize=letter)
-    width, height = letter
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
 
-    # — Logo and header branding —
+    # Branding: Logo (if exists) + "Digital Will" Header
     logo_path = os.path.join(settings.BASE_DIR, 'static/images/logo.png')
     if os.path.exists(logo_path):
         logo = ImageReader(logo_path)
-        p.drawImage(logo, 40, height - 80, width=120, height=50, mask='auto')
-    p.setFont("Helvetica-Bold", 16)
-    p.drawString(180, height - 50, "Special Account Verification")
+        p.drawImage(logo, 50, height - 90, width=100, height=40, mask='auto')
 
-    # — Account details —
-    p.setFont("Helvetica", 12)
-    y = height - 120
-    for key in ['account_type', 'account_name', 'account_number']:
-        p.drawString(40, y, f"{key.replace('_',' ').title()}: {data.get(key)}")
-        y -= 20
-    p.drawString(40, y, f"Assigned To (Heir ID): {data.get('assigned_to_id')}")
-    y -= 20
-    p.drawString(40, y, f"Testator: {testator_name}")
+    # Title & Branding
+    p.setFillColor(colors.orange)
+    p.setFont("Helvetica-Bold", 24)
+    p.drawString(160, height - 50, "🧾 Digital Will")
+    p.setStrokeColor(colors.orange)
+    p.setLineWidth(2)
+    p.line(50, height - 60, width - 50, height - 60)
+
+    # Subtitle
+    p.setFillColor(colors.black)
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(50, height - 100, "Special Account Verification")
+
+    # Account Details Table
+    table_data = [
+        ["Account Type", data.get("account_type", "N/A")],
+        ["Account Name", data.get("account_name", "N/A")],
+        ["Account Number", data.get("account_number", "N/A")],
+        ["Assigned To (Heir ID)", data.get("assigned_to_id", "N/A")],
+        ["Testator", testator_name],
+        ["Date", str(date.today())],
+    ]
+
+    table = Table(table_data, colWidths=[180, 320])
+    style = TableStyle([
+        ("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.orange),
+        ("TEXTCOLOR", (0, 0), (-1, -1), colors.black),
+        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 0), (-1, -1), 12),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+    ])
+    table.setStyle(style)
+
+    # Draw the table
+    table.wrapOn(p, width, height)
+    table.drawOn(p, 50, height - 280)
+
+    # Footer with ISO
+    p.setFont("Helvetica-Oblique", 10)
+    p.setFillColor(colors.orange)
+    p.drawRightString(width - 50, 30, "ISO 1496177")
 
     p.showPage()
     p.save()
@@ -83,35 +161,64 @@ def generate_special_account_pdf(data, testator_name):
 # GENERATE ASSET PDF
 def generate_asset_pdf(data, testator_name, image_file=None):
     buffer = BytesIO()
-    p = canvas.Canvas(buffer, pagesize=letter)
-    width, height = letter
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
 
+    # Title & Branding
+    p.setFillColor(colors.orange)
+    p.setFont("Helvetica-Bold", 24)
+    p.drawString(50, height - 50, "🧾 Digital Will")
+    p.setStrokeColor(colors.orange)
+    p.setLineWidth(2)
+    p.line(50, height - 60, width - 50, height - 60)
+
+    # Subtitle
+    p.setFillColor(colors.black)
     p.setFont("Helvetica-Bold", 16)
-    p.drawString(100, height - 50, "Asset Verification Details")
+    p.drawString(50, height - 100, "Asset Verification Details")
 
-    p.setFont("Helvetica", 12)
-    y = height - 100
-    line_height = 20
+    # Asset Data Table
+    table_data = [
+        ["Testator", testator_name],
+        ["Asset Type", data.get("asset_type", "N/A")],
+        ["Location", data.get("location", "N/A")],
+        ["Estimated Value", data.get("estimated_value", "N/A")],
+        ["Instruction", data.get("instruction", "N/A")[:100] + "..."],
+        ["Assigned To (Heir IDs)", ", ".join(data.get("assigned_to", []))],
+        ["Date", str(date.today())],
+    ]
 
-    p.drawString(100, y, f"Testator: {testator_name}")
-    y -= line_height
-    p.drawString(100, y, f"Asset Type: {data['asset_type']}")
-    y -= line_height
-    p.drawString(100, y, f"Location: {data['location']}")
-    y -= line_height
-    p.drawString(100, y, f"Estimated Value: {data['estimated_value']}")
-    y -= line_height
-    p.drawString(100, y, f"Instruction: {data['instruction']}")
-    y -= line_height
-    p.drawString(100, y, f"Assigned To (Heir IDs): {', '.join(data['assigned_to'])}")
+    table = Table(table_data, colWidths=[180, 320])
+    style = TableStyle([
+        ("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.orange),
+        ("TEXTCOLOR", (0, 0), (-1, -1), colors.black),
+        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 0), (-1, -1), 12),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+    ])
+    table.setStyle(style)
 
+    # Draw table
+    table.wrapOn(p, width, height)
+    table.drawOn(p, 50, height - 340)
+
+    # Image (if provided)
     if image_file:
         try:
-            y -= 50
+            image_y = height - 520  # Adjust vertical position as needed
             image = ImageReader(image_file)
-            p.drawImage(image, 100, y - 150, width=200, height=150, preserveAspectRatio=True)
+            p.drawImage(image, 50, image_y - 150, width=200, height=150, preserveAspectRatio=True)
         except Exception as e:
-            p.drawString(100, y, "Image could not be displayed.")
+            p.setFont("Helvetica-Oblique", 10)
+            p.setFillColor(colors.red)
+            p.drawString(50, height - 520, "⚠️ Image could not be displayed.")
+
+    # Footer with ISO
+    p.setFont("Helvetica-Oblique", 10)
+    p.setFillColor(colors.orange)
+    p.drawRightString(width - 50, 30, "ISO 1496177")
 
     p.showPage()
     p.save()
@@ -121,25 +228,52 @@ def generate_asset_pdf(data, testator_name, image_file=None):
 # GENERATE HEIR PDF
 def generate_heir_pdf(data, testator):
     buffer = BytesIO()
-    p = canvas.Canvas(buffer, pagesize=letter)
-    width, height = letter
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
 
+    # Title & Branding
+    p.setFillColor(colors.orange)
+    p.setFont("Helvetica-Bold", 24)
+    p.drawString(50, height - 50, "🧾 Digital Will")
+    p.setStrokeColor(colors.orange)
+    p.setLineWidth(2)
+    p.line(50, height - 60, width - 50, height - 60)
+
+    # Subtitle
+    p.setFillColor(colors.black)
     p.setFont("Helvetica-Bold", 16)
-    p.drawString(100, height - 50, "Heir Verification Details")
+    p.drawString(50, height - 100, "Heir Verification Details")
 
-    p.setFont("Helvetica", 12)
-    y = height - 100
-    line_height = 20
+    # Heir Data Table
+    table_data = [
+        ["Testator", getattr(testator, "full_name", "N/A")],
+        ["Full Name", data.get("full_name", "N/A")],
+        ["Relationship", data.get("relationship", "N/A")],
+        ["Date of Birth", data.get("date_of_birth", "N/A")],
+        ["Phone Number", data.get("phone_number", "N/A")],
+        ["Date", str(date.today())],
+    ]
 
-    p.drawString(100, y, f"Testator: {testator.full_name}")
-    y -= line_height
-    p.drawString(100, y, f"Full Name: {data['full_name']}")
-    y -= line_height
-    p.drawString(100, y, f"Relationship: {data['relationship']}")
-    y -= line_height
-    p.drawString(100, y, f"Date of Birth: {data['date_of_birth']}")
-    y -= line_height
-    p.drawString(100, y, f"Phone Number: {data['phone_number']}")
+    table = Table(table_data, colWidths=[150, 350])
+    style = TableStyle([
+        ("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.orange),
+        ("TEXTCOLOR", (0, 0), (-1, -1), colors.black),
+        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 0), (-1, -1), 12),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+    ])
+    table.setStyle(style)
+
+    # Draw the table
+    table.wrapOn(p, width, height)
+    table.drawOn(p, 50, height - 300)
+
+    # Footer with ISO
+    p.setFont("Helvetica-Oblique", 10)
+    p.setFillColor(colors.orange)
+    p.drawRightString(width - 50, 30, "ISO 1496177")
 
     p.showPage()
     p.save()
@@ -148,28 +282,65 @@ def generate_heir_pdf(data, testator):
 
 # GENERATE CONFIDENTIAL INFO PDF
 def generate_confidential_pdf(data, testator_name):
-    from io import BytesIO
-    from reportlab.pdfgen import canvas
-    from reportlab.lib.pagesizes import letter
-
     buffer = BytesIO()
-    p = canvas.Canvas(buffer, pagesize=letter)
-    width, height = letter
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
 
-    # Branding
+    # Title & Branding
+    p.setFillColor(colors.orange)
+    p.setFont("Helvetica-Bold", 24)
+    p.drawString(50, height - 50, "🧾 Digital Will")
+    p.setStrokeColor(colors.orange)
+    p.setLineWidth(2)
+    p.line(50, height - 60, width - 50, height - 60)
+
+    # Subtitle
+    p.setFillColor(colors.black)
     p.setFont("Helvetica-Bold", 16)
-    p.drawString(180, height - 50, "Confidential Info Verification")
+    p.drawString(50, height - 100, "Confidential Info Verification")
 
-    # Content
+    # Table with Summary Info
+    table_data = [
+        ["Testator", testator_name],
+        ["Assigned Heir ID", data.get("assigned_to_id", "N/A")],
+        ["Date", str(date.today())]
+    ]
+
+    table = Table(table_data, colWidths=[150, 350])
+    table.setStyle(TableStyle([
+        ("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.orange),
+        ("TEXTCOLOR", (0, 0), (-1, -1), colors.black),
+        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 0), (-1, -1), 12),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+    ]))
+
+    table.wrapOn(p, width, height)
+    table.drawOn(p, 50, height - 200)
+
+    # Instructions Section
+    p.setFont("Helvetica-Bold", 12)
+    p.drawString(50, height - 240, "Instructions:")
+
     p.setFont("Helvetica", 12)
-    y = height - 100
-    p.drawString(40, y, f"Testator: {testator_name}")
-    y -= 20
-    p.drawString(40, y, f"Assigned Heir ID: {data.get('assigned_to_id')}")
-    y -= 20
-    p.drawString(40, y, "Instructions:")
-    y -= 20
-    p.drawString(60, y, data.get("instructions")[:200] + "...")
+    instruction_text = data.get("instructions", "No instructions provided.")
+    wrapped_lines = simpleSplit(instruction_text, "Helvetica", 12, width - 100)
+
+    y_position = height - 260
+    for line in wrapped_lines:
+        if y_position < 60:
+            p.showPage()
+            p.setFont("Helvetica", 12)
+            y_position = height - 60
+        p.drawString(50, y_position, line)
+        y_position -= 18
+
+    # Footer with ISO
+    p.setFont("Helvetica-Oblique", 10)
+    p.setFillColor(colors.orange)
+    p.drawRightString(width - 50, 30, "ISO 1496177")
 
     p.showPage()
     p.save()
@@ -178,52 +349,157 @@ def generate_confidential_pdf(data, testator_name):
 
 def generate_executor_pdf(executor_data, testator_name):
     """
-    Generate a PDF summary of the executor submission.
+    Generate a branded PDF summary of the executor submission.
     Returns a BytesIO buffer with the PDF content.
     """
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
 
-    styles = getSampleStyleSheet()
-    elements = []
+    # Title & Branding
+    p.setFillColor(colors.orange)
+    p.setFont("Helvetica-Bold", 24)
+    p.drawString(50, height - 50, "🧾 Digital Will")
+    p.setStrokeColor(colors.orange)
+    p.setLineWidth(2)
+    p.line(50, height - 60, width - 50, height - 60)
 
-    title = f"Executor Assignment Summary for {testator_name}"
-    elements.append(Paragraph(title, styles["Title"]))
-    elements.append(Spacer(1, 12))
+    # Subtitle
+    p.setFillColor(colors.black)
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(50, height - 100, f"Executor Assignment Summary for {testator_name}")
 
-    elements.append(Paragraph(f"<b>Full Name:</b> {executor_data.get('full_name')}", styles["Normal"]))
-    elements.append(Paragraph(f"<b>Relationship:</b> {executor_data.get('relationship')}", styles["Normal"]))
-    elements.append(Paragraph(f"<b>Phone Number:</b> {executor_data.get('phone_number')}", styles["Normal"]))
-    elements.append(Paragraph(f"<b>Testator ID:</b> {executor_data.get('testator_id')}", styles["Normal"]))
+    # Executor Info Table
+    table_data = [
+        ["Full Name", executor_data.get("full_name", "N/A")],
+        ["Relationship", executor_data.get("relationship", "N/A")],
+        ["Phone Number", executor_data.get("phone_number", "N/A")],
+        ["Testator ID", executor_data.get("testator_id", "N/A")],
+        ["Date", str(date.today())],
+    ]
 
-    doc.build(elements)
+    table = Table(table_data, colWidths=[150, 350])
+    style = TableStyle([
+        ("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.orange),
+        ("TEXTCOLOR", (0, 0), (-1, -1), colors.black),
+        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 0), (-1, -1), 12),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+    ])
+    table.setStyle(style)
+
+    # Draw the table
+    table.wrapOn(p, width, height)
+    table.drawOn(p, 50, height - 300)
+
+    # Footer with ISO
+    p.setFont("Helvetica-Oblique", 10)
+    p.setFillColor(colors.orange)
+    p.drawRightString(width - 50, 30, "ISO 1496177")
+
+    p.showPage()
+    p.save()
     buffer.seek(0)
     return buffer
 
 def generate_post_death_pdf(instruction_data, testator_name):
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4)
-    styles = getSampleStyleSheet()
-    elements = []
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
 
-    elements.append(Paragraph(f"Post-Death Instructions for {testator_name}", styles["Title"]))
-    elements.append(Spacer(1, 12))
-    elements.append(Paragraph("<b>Instructions:</b>", styles["Heading3"]))
-    elements.append(Paragraph(instruction_data.get("instructions", ""), styles["Normal"]))
+    # Title & Branding
+    p.setFillColor(colors.orange)
+    p.setFont("Helvetica-Bold", 24)
+    p.drawString(50, height - 50, "🧾 Digital Will")
+    p.setStrokeColor(colors.orange)
+    p.setLineWidth(2)
+    p.line(50, height - 60, width - 50, height - 60)
 
-    doc.build(elements)
+    # Subtitle
+    p.setFillColor(colors.black)
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(50, height - 100, f"Post-Death Instructions for {testator_name}")
+
+    # Instruction Text (wrapped manually)
+    p.setFont("Helvetica", 12)
+    p.setFillColor(colors.black)
+    instruction_text = instruction_data.get("instructions", "No instructions provided.")
+    
+    # Wrap text within page width
+    from reportlab.lib.utils import simpleSplit
+    wrapped_lines = simpleSplit(instruction_text, "Helvetica", 12, width - 100)
+    
+    y_position = height - 140
+    for line in wrapped_lines:
+        if y_position < 60:  # avoid overlapping footer
+            p.showPage()
+            p.setFont("Helvetica", 12)
+            y_position = height - 60
+        p.drawString(50, y_position, line)
+        y_position -= 18  # line spacing
+
+    # Footer with ISO
+    p.setFont("Helvetica-Oblique", 10)
+    p.setFillColor(colors.orange)
+    p.drawRightString(width - 50, 30, "ISO 1496177")
+
+    p.showPage()
+    p.save()
     buffer.seek(0)
     return buffer
 
 def generate_asset_update_pdf(data, full_name):
     buffer = BytesIO()
-    p = canvas.Canvas(buffer)
-    p.drawString(100, 800, f"Asset Update Summary for {full_name}")
-    p.drawString(100, 780, f"Type: {data['asset_type']}")
-    p.drawString(100, 760, f"Location: {data['location']}")
-    p.drawString(100, 740, f"Estimated Value: {data['estimated_value']}")
-    p.drawString(100, 720, f"Instruction: {data['instruction'][:100]}")
-    p.drawString(100, 700, f"Image: {data['asset_image_name']}")
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+
+    # Title & Branding
+    p.setFillColor(colors.orange)
+    p.setFont("Helvetica-Bold", 24)
+    p.drawString(50, height - 50, "🧾 Digital Will")
+    p.setStrokeColor(colors.orange)
+    p.setLineWidth(2)
+    p.line(50, height - 60, width - 50, height - 60)
+
+    # Subtitle
+    p.setFillColor(colors.black)
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(50, height - 100, f"Asset Update Summary for {full_name}")
+
+    # Asset Data Table
+    table_data = [
+        ["Asset Type", data.get("asset_type", "N/A")],
+        ["Location", data.get("location", "N/A")],
+        ["Estimated Value", data.get("estimated_value", "N/A")],
+        ["Instruction", data.get("instruction", "N/A")[:100] + "..."],
+        ["Image", data.get("asset_image_name", "N/A")],
+        ["Updated By", full_name],
+        ["Date", str(date.today())],
+    ]
+
+    table = Table(table_data, colWidths=[150, 350])
+    style = TableStyle([
+        ("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.orange),
+        ("TEXTCOLOR", (0, 0), (-1, -1), colors.black),
+        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 0), (-1, -1), 12),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+    ])
+    table.setStyle(style)
+
+    # Draw the table
+    table.wrapOn(p, width, height)
+    table.drawOn(p, 50, height - 350)
+
+    # Footer with ISO
+    p.setFont("Helvetica-Oblique", 10)
+    p.setFillColor(colors.orange)
+    p.drawRightString(width - 50, 30, "ISO 1496177")
+
     p.showPage()
     p.save()
     buffer.seek(0)
@@ -232,15 +508,51 @@ def generate_asset_update_pdf(data, full_name):
 def generate_asset_delete_pdf(asset_data, full_name):
     buffer = BytesIO()
     p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
 
-    p.drawString(100, 800, f"Asset Deletion Summary for {full_name}")
-    p.drawString(100, 780, f"Asset Type: {asset_data.get('asset_type')}")
-    p.drawString(100, 760, f"Location: {asset_data.get('location')}")
-    p.drawString(100, 740, f"Estimated Value: {asset_data.get('estimated_value', 'N/A')}")
-    p.drawString(100, 720, f"Instruction: {asset_data.get('instruction', 'N/A')[:100]}...")
+    # Title & Branding
+    p.setFillColor(colors.orange)
+    p.setFont("Helvetica-Bold", 24)
+    p.drawString(50, height - 50, "🧾 Digital Will")
+    p.setStrokeColor(colors.orange)
+    p.setLineWidth(2)
+    p.line(50, height - 60, width - 50, height - 60)
 
-    p.drawString(100, 700, f"Deletion Requested By: {full_name}")
-    p.drawString(100, 680, "Date: ___________________________")
+    # Subtitle
+    p.setFillColor(colors.black)
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(50, height - 100, f"Asset Deletion Summary for {full_name}")
+
+    # Asset Data Table
+    data = [
+        ["Asset Type", asset_data.get("asset_type", "N/A")],
+        ["Location", asset_data.get("location", "N/A")],
+        ["Estimated Value", asset_data.get("estimated_value", "N/A")],
+        ["Instruction", asset_data.get("instruction", "N/A")[:100] + "..."],
+        ["Deletion Requested By", full_name],
+        ["Date", str(date.today())],
+    ]
+
+    table = Table(data, colWidths=[150, 350])
+    style = TableStyle([
+        ("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.orange),
+        ("TEXTCOLOR", (0, 0), (-1, -1), colors.black),
+        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 0), (-1, -1), 12),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+    ])
+    table.setStyle(style)
+
+    # Draw the table
+    table.wrapOn(p, width, height)
+    table.drawOn(p, 50, height - 320)
+
+    # Footer with ISO
+    p.setFont("Helvetica-Oblique", 10)
+    p.setFillColor(colors.orange)
+    p.drawRightString(width - 50, 30, "ISO 1496177")
 
     p.showPage()
     p.save()
