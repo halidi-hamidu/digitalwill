@@ -26,6 +26,8 @@ from django.core.mail import EmailMultiAlternatives
 from django.contrib.auth.decorators import login_required
 from django.template.loader import render_to_string
 from django.utils.encoding import force_str
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+
 import uuid
 import json
 from utils import generate_pdf_from_template
@@ -52,6 +54,14 @@ from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.platypus import Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
+from io import BytesIO
+from reportlab.platypus import Table, TableStyle
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
+from django.core.mail import EmailMessage
+from django.conf import settings
+from utils import generate_updated_user_pdf
 
 class CustomPasswordResetView(PasswordResetView):
     template_name = 'authentication/registration/password_reset_form.html'
@@ -187,26 +197,35 @@ def verify_failed(request):
     return render(request, "authentication/verify_failed.html")
 
 signer = Signer()
+# Register Montserrat fonts (ensure .ttf files are in your project folder)
+pdfmetrics.registerFont(TTFont("Montserrat-Bold", "Montserrat-Regular.ttf"))
+pdfmetrics.registerFont(TTFont("Montserrat-Thin", "Montserrat-VariableFont_wght.ttf"))
 
 def generate_user_pdf(user, profile):
     buffer = BytesIO()
     p = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
 
-    # Title & Logo section
+    current_date = datetime.now().strftime("%d %B %Y")
+
+    # ------------------- TOP CONTENT -------------------
+    p.setFont("Montserrat-Bold", 20)
     p.setFillColor(colors.orange)
-    p.setFont("Helvetica-Bold", 24)
-    p.drawString(50, height - 50, "🧾 Digital Will")
+    p.drawString(50, height - 50, "🧾 Seduta Will")
+
+    p.setFont("Montserrat-Bold", 12)
+    p.setFillColor(colors.black)
+    p.drawRightString(width - 50, height - 45, current_date)
+
     p.setStrokeColor(colors.orange)
-    p.setLineWidth(2)
+    p.setLineWidth(1.5)
     p.line(50, height - 60, width - 50, height - 60)
 
-    # Subtitle
-    p.setFillColor(colors.black)
-    p.setFont("Helvetica-Bold", 16)
-    p.drawString(50, height - 100, "User Profile Details")
+    # ------------------- MIDDLE CONTENT -------------------
+    p.setFont("Montserrat-Bold", 16)
+    p.setFillColor(colors.orange)
+    p.drawString(50, height - 90, "User Details")  # LEFT-aligned now
 
-    # User info table data
     data = [
         ["Full Name", profile.full_name],
         ["Email", user.email],
@@ -215,40 +234,83 @@ def generate_user_pdf(user, profile):
         ["Phone", profile.phone_number],
         ["NIDA Number", profile.nida_number],
         ["Address", profile.address],
-        ["Role", ", ".join(profile.roles) if isinstance(profile.roles, list) else profile.roles],
-        ["Email Verified", str(profile.email_verified)],
+        # ["Role", ", ".join(profile.roles) if isinstance(profile.roles, list) else profile.roles],
     ]
 
-    # Table setup
-    table = Table(data, colWidths=[120, 350])
+    # Full-width table (minus margins)
+    margin = 50
+    table_width = width - 2 * margin
+    col_widths = [table_width * 0.3, table_width * 0.7]
+
+    table = Table(data, colWidths=col_widths)
     style = TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.orange),
+        ("FONTNAME", (0, 0), (-1, -1), "Montserrat-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 11),
         ("TEXTCOLOR", (0, 0), (-1, -1), colors.black),
-        ("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.orange),
-        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
-        ("FONTSIZE", (0, 0), (-1, -1), 12),
-        ("LEFTPADDING", (0, 0), (-1, -1), 10),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("BOX", (0, 0), (-1, -1), 0.75, colors.grey),
+        ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
     ])
     table.setStyle(style)
 
-    # Drawing the table
+    table_top = height - 110
+    table_height = len(data) * 18
     table.wrapOn(p, width, height)
-    table.drawOn(p, 50, height - 400)
+    table.drawOn(p, margin, table_top - table_height)
 
-    # ISO Footer
-    p.setFont("Helvetica-Oblique", 10)
+    # ------------------- DECLARATION -------------------
+    declaration_paragraphs = [
+        "I confirm that the information provided above is true, complete, and correct to the best of my knowledge. This profile accurately reflects my current personal, professional, and legal status as recognized by relevant authorities.",
+        
+        "The contents of this document are based on verified data submitted and authorized for digital documentation. I acknowledge that any false or misleading information may result in legal implications under applicable laws and regulations.",
+        
+        "This digital profile has been prepared for official use and may be presented as supporting evidence for identity verification, administrative processes, and other formal engagements requiring proof of personal data.",
+        
+        "I understand and accept that Seduta Will, as the issuing authority, maintains the right to store, audit, and validate this information in line with its data governance policies and the legal framework of Tanzania."
+    ]
+
+    styles = getSampleStyleSheet()
+    para_style = ParagraphStyle(
+        name='Justified',
+        parent=styles['Normal'],
+        fontName="Montserrat-Bold",
+        fontSize=11,
+        leading=14,
+        alignment=4,  # Justified
+    )
+
+    decl_start_y = table_top - table_height - 40
+    for paragraph in declaration_paragraphs:
+        para = Paragraph(paragraph, para_style)
+        para_width, para_height = para.wrap(width - 2 * margin, height)
+        para.drawOn(p, margin, decl_start_y - para_height)
+        decl_start_y -= para_height + 10  # Spacing between paragraphs
+
+    # ------------------- FOOTER CONTENT -------------------
+    footer_y = 80
+    line_spacing = 16
+
+    p.setStrokeColor(colors.orange)
+    p.setLineWidth(0.5)
+    p.line(margin, footer_y + 26, width - margin, footer_y + 26)
+
+    p.setFont("Montserrat-Bold", 10)
+    p.setFillColor(colors.black)
+    p.drawCentredString(width / 2, footer_y + (line_spacing * 2), f"PDF ID: {user.id}-{profile.id}")
+    p.drawCentredString(width / 2, footer_y + line_spacing, "Seduta Will, P.O. Box 15777, Kawe, Dar es Salaam")
+
     p.setFillColor(colors.orange)
-    p.drawRightString(width - 50, 30, "ISO 1496177")
+    p.drawCentredString(width / 2, footer_y, "ISO 1496177")
 
+    # Finalize PDF
     p.showPage()
     p.save()
     buffer.seek(0)
     return buffer
 
 signer = signing.TimestampSigner()
-
 @cache_control(no_cache=True, privacy=True, must_revalidate=True, no_store=True)
 @login_required
 def personalinformationview(request):
@@ -347,18 +409,84 @@ def personalinformationview(request):
     })
 
 
+# def verify_email(request, token):
+#     try:
+#         # max_age=86400 seconds = 1 day expiry
+#         data = signing.loads(token, max_age=86400)
+#         user = User.objects.get(pk=data["user_pk"])
+#         form_data = data["form_data"]
+
+#         # Convert ISO string dates back to date objects
+#         date_fields = ['date_of_birth', 'created_at', 'updated_at']  # add any other date fields here
+
+#         for field in date_fields:
+#             if field in form_data and form_data[field]:
+#                 try:
+#                     form_data[field] = datetime.fromisoformat(form_data[field]).date()
+#                 except ValueError:
+#                     form_data[field] = None
+
+#         profile = UserProfile.objects.get(user=user)
+
+#         # Check uniqueness before applying updates
+#         if UserProfile.objects.filter(nida_number=form_data.get("nida_number"))\
+#                               .exclude(pk=profile.pk).exists():
+#             messages.error(request, f"NIDA number {form_data.get('nida_number')} is already in use.")
+#             return redirect("authentication:personalinformation")
+        
+#         if UserProfile.objects.filter(phone_number=form_data.get("phone_number"))\
+#                               .exclude(pk=profile.pk).exists():
+#             messages.error(request, f"Phone number {form_data.get('phone_number')} is already in use.")
+#             return redirect("authentication:personalinformation")
+
+#         if User.objects.filter(username=form_data.get('username'))\
+#                               .exclude(pk=user.pk).exists():
+#             messages.error(request, f"Username {form_data.get('username')} is already in use.")
+#             return redirect("authentication:personalinformation")
+
+#         # Update User fields
+#         user.first_name = form_data.get("first_name", user.first_name)
+#         user.last_name = form_data.get("last_name", user.last_name)
+#         user.username = form_data.get("username", user.username)
+#         user.email = form_data.get("username", user.email)
+#         user.save()
+
+#         # Update UserProfile fields
+#         for field, value in form_data.items():
+#             if field in ["user", "email_verified", "is_active"]:
+#                 continue
+#             if hasattr(profile, field):
+#                 setattr(profile, field, value)
+
+#         profile.email_verified = True
+#         profile.is_active = True
+#         profile.save()
+
+#         messages.success(request, "Email verified and profile updated successfully.")
+#         return redirect("authentication:personalinformation")
+
+#     except User.DoesNotExist:
+#         messages.error(request, "Invalid user.")
+#     except UserProfile.DoesNotExist:
+#         messages.error(request, "User profile not found.")
+#     except SignatureExpired:
+#         messages.error(request, "Verification link expired.")
+#     except BadSignature:
+#         messages.error(request, "Invalid verification link.")
+#     except Exception as e:
+#         messages.error(request, f"An error occurred: {e}")
+
+#     return redirect("authentication:personalinformation")
+
 def verify_email(request, token):
     try:
-        # max_age=86400 seconds = 1 day expiry
         data = signing.loads(token, max_age=86400)
         user = User.objects.get(pk=data["user_pk"])
         form_data = data["form_data"]
 
-        # Convert ISO string dates back to date objects
-        date_fields = ['date_of_birth', 'created_at', 'updated_at']  # add any other date fields here
-
-        for field in date_fields:
-            if field in form_data and form_data[field]:
+        # -- Convert ISO-dates --
+        for field in ['date_of_birth', 'created_at', 'updated_at']:
+            if form_data.get(field):
                 try:
                     form_data[field] = datetime.fromisoformat(form_data[field]).date()
                 except ValueError:
@@ -366,39 +494,72 @@ def verify_email(request, token):
 
         profile = UserProfile.objects.get(user=user)
 
-        # Check uniqueness before applying updates
-        if UserProfile.objects.filter(nida_number=form_data.get("nida_number"))\
-                              .exclude(pk=profile.pk).exists():
-            messages.error(request, f"NIDA number {form_data.get('nida_number')} is already in use.")
+        # -- Uniqueness checks --
+        if UserProfile.objects.filter(nida_number=form_data.get("nida_number")).exclude(pk=profile.pk).exists():
+            messages.error(request, f"NIDA number {form_data['nida_number']} is already in use.")
             return redirect("authentication:personalinformation")
-        
-        if UserProfile.objects.filter(phone_number=form_data.get("phone_number"))\
-                              .exclude(pk=profile.pk).exists():
-            messages.error(request, f"Phone number {form_data.get('phone_number')} is already in use.")
+        if UserProfile.objects.filter(phone_number=form_data.get("phone_number")).exclude(pk=profile.pk).exists():
+            messages.error(request, f"Phone number {form_data['phone_number']} is already in use.")
             return redirect("authentication:personalinformation")
-
-        if User.objects.filter(username=form_data.get('username'))\
-                              .exclude(pk=user.pk).exists():
-            messages.error(request, f"Username {form_data.get('username')} is already in use.")
+        if User.objects.filter(username=form_data.get("username")).exclude(pk=user.pk).exists():
+            messages.error(request, f"Username {form_data['username']} is already in use.")
             return redirect("authentication:personalinformation")
 
-        # Update User fields
+        # -- Update User --
         user.first_name = form_data.get("first_name", user.first_name)
         user.last_name = form_data.get("last_name", user.last_name)
         user.username = form_data.get("username", user.username)
         user.email = form_data.get("username", user.email)
         user.save()
 
-        # Update UserProfile fields
-        for field, value in form_data.items():
+        # -- Update Profile --
+        for field, val in form_data.items():
             if field in ["user", "email_verified", "is_active"]:
                 continue
             if hasattr(profile, field):
-                setattr(profile, field, value)
+                setattr(profile, field, val)
 
         profile.email_verified = True
         profile.is_active = True
         profile.save()
+
+        # -- Generate & Send PDF if Approved --
+        pdf_buffer = generate_updated_user_pdf(user, profile)
+
+        # --- Email to current user ---
+        user_email = EmailMessage(
+            subject="Your Profile on Seduta Will — Approved",
+            body=(
+                f"Hello {user.get_full_name()},\n\n"
+                "Congratulations! Your profile has been verified and officially approved.\n"
+                "Please find an attached PDF summary of your updated details.\n\n"
+                "Thank you for being with Seduta Will.\n"
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[user.email],
+        )
+        user_email.attach("profile_update.pdf", pdf_buffer.getvalue(), "application/pdf")
+        user_email.send(fail_silently=False)
+
+        # --- Email to admins ---
+        admin_emails = list(
+            User.objects.filter(user_userprofile__roles="Admin")
+                        .values_list("email", flat=True)
+        )
+        if admin_emails:
+            admin_email = EmailMessage(
+                subject=f"User Approved: {user.get_full_name()}",
+                body=(
+                    f"Dear Admin,\n\n"
+                    f"User {user.get_full_name()} ({user.email}) has verified their email and been marked as *APPROVED*.\n"
+                    "Attached is their updated profile summary.\n\n"
+                    "— Seduta Will System"
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=admin_emails,
+            )
+            admin_email.attach("approved_user_profile.pdf", pdf_buffer.getvalue(), "application/pdf")
+            admin_email.send(fail_silently=False)
 
         messages.success(request, "Email verified and profile updated successfully.")
         return redirect("authentication:personalinformation")
@@ -412,10 +573,9 @@ def verify_email(request, token):
     except BadSignature:
         messages.error(request, "Invalid verification link.")
     except Exception as e:
-        messages.error(request, f"An error occurred: {e}")
+        messages.error(request, f"An unexpected error occurred: {e}")
 
     return redirect("authentication:personalinformation")
-
 
 @cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
 @login_required

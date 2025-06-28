@@ -142,3 +142,6 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'ulizafvllstackdeveloper01@gmail.com'
 EMAIL_HOST_PASSWORD = 'jamy mxmu bsaq diss'
 DEFAULT_FROM_EMAIL = 'ulizafvllstackdeveloper01@gmail.com'
+
+CELERY_BROKER_URL = 'amqp://localhost'
+CELERY_RESULT_BACKEND = 'rpc://'  # or 'redis://localhost:6379/0' if using Redis
