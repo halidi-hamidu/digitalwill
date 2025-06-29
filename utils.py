@@ -26,6 +26,13 @@ from django.template.loader import render_to_string
 from weasyprint import HTML
 from reportlab.lib.units import inch
 import uuid
+from administration.models import *
+
+from reportlab.lib.utils import simpleSplit, ImageReader
+from reportlab.platypus import Table, TableStyle
+from datetime import datetime, date
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
 # Register Montserrat fonts (if not already registered)
 pdfmetrics.registerFont(TTFont("Montserrat-Bold", "Montserrat-Regular.ttf"))
@@ -168,12 +175,10 @@ def generate_special_account_pdf(data, testator_name, settings):
             logo = ImageReader(logo_path)
             p.drawImage(logo, margin, height - 90, width=100, height=40, mask='auto')
         except Exception:
-            # If logo can't load, silently continue
             pass
 
     p.setFont("Montserrat-Bold", 20)
     p.setFillColor(colors.orange)
-    # Adjust header text position if logo present, else start at margin
     header_x = margin + 110 if os.path.exists(logo_path) else margin
     p.drawString(header_x, height - 50, "🧾 Seduta Will")
 
@@ -211,12 +216,162 @@ def generate_special_account_pdf(data, testator_name, settings):
             y_declaration -= line_height
         y_declaration -= line_height  # extra space between paragraphs
 
+    # ----------- FETCH HEIR FULL NAME(S) for assigned_to_id -----------
+    assigned_ids = data.get("assigned_to_id")
+    heirs = []
+
+    if assigned_ids:
+        # Handle both single id or list of ids
+        if isinstance(assigned_ids, (list, tuple)):
+            heirs = Heir.objects.filter(id__in=assigned_ids)
+        else:
+            heirs = Heir.objects.filter(id=assigned_ids)
+
+    if heirs:
+        # Build ordered list of full names
+        heir_names = [f"{idx + 1}. {heir.full_name}" for idx, heir in enumerate(heirs)]
+        heir_display = "\n".join(heir_names)
+    else:
+        heir_display = "N/A"
+
     # ----------- ACCOUNT DETAILS TABLE -----------
     table_data = [
         ["Account Type", data.get("account_type", "N/A")],
         ["Account Name", data.get("account_name", "N/A")],
         ["Account Number", data.get("account_number", "N/A")],
-        ["Assigned To (Heir ID)", data.get("assigned_to_id", "N/A")],
+        ["Assigned To (Heir Full Name)", heir_display],  # <-- updated here
+        ["Testator", testator_name],
+        ["Date", current_date],
+    ]
+
+    table_width = width - 2 * margin
+    col_widths = [table_width * 0.36, table_width * 0.64]
+
+    table = Table(table_data, colWidths=col_widths)
+    style = TableStyle([
+        ("FONTNAME", (0, 0), (-1, -1), "Montserrat-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 11),
+        ("TEXTCOLOR", (0, 0), (-1, -1), colors.black),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),  # changed to TOP for multi-line heir names
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("BOX", (0, 0), (-1, -1), 0.75, colors.grey),
+        ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
+    ])
+    table.setStyle(style)
+
+    table_top = y_declaration - 20
+    # Use wrap to calculate height properly
+    _, table_height = table.wrap(table_width, height)
+    table.drawOn(p, margin, table_top - table_height)
+
+    # ----------- FOOTER -----------
+    footer_y = 80
+    line_spacing = 16
+
+    p.setStrokeColor(colors.orange)
+    p.setLineWidth(0.5)
+    p.line(margin, footer_y + 26, width - margin, footer_y + 26)
+
+    p.setFont("Montserrat-Bold", 10)
+    p.setFillColor(colors.black)
+    p.drawCentredString(width / 2, footer_y + (line_spacing * 2), f"Account Record for: {testator_name}")
+    p.drawCentredString(width / 2, footer_y + line_spacing, "Seduta Will, P.O. Box 15777, Kawe, Dar es Salaam")
+
+    p.setFillColor(colors.orange)
+    p.drawCentredString(width / 2, footer_y, "ISO 1496177")
+
+    # ----------- FINALIZE PDF -----------
+    p.showPage()
+    p.save()
+    buffer.seek(0)
+    return buffer
+
+# In your views.py (or utils.py, wherever your function is)
+
+from django.conf import settings
+from io import BytesIO
+from datetime import date
+import os
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.utils import ImageReader, simpleSplit
+from reportlab.platypus import Table, TableStyle
+from reportlab.pdfgen import canvas
+
+def generate_special_account_pdf(data, testator_name):
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    margin = 50
+    current_date = date.today().strftime("%d %B %Y")
+
+    # Logo
+    logo_path = os.path.join(settings.BASE_DIR, 'static/images/logo.png')
+    if os.path.exists(logo_path):
+        try:
+            logo = ImageReader(logo_path)
+            p.drawImage(logo, margin, height - 90, width=100, height=40, mask='auto')
+        except Exception:
+            pass
+
+    p.setFont("Montserrat-Bold", 20)
+    p.setFillColor(colors.orange)
+    header_x = margin + 110 if os.path.exists(logo_path) else margin
+    p.drawString(header_x, height - 50, "🧾 Seduta Will")
+
+    p.setFont("Montserrat-Bold", 12)
+    p.setFillColor(colors.black)
+    p.drawRightString(width - margin, height - 45, current_date)
+
+    p.setStrokeColor(colors.orange)
+    p.setLineWidth(1.5)
+    p.line(margin, height - 60, width - margin, height - 60)
+
+    p.setFont("Montserrat-Bold", 16)
+    p.setFillColor(colors.orange)
+    p.drawString(margin, height - 90, "Special Account Verification")
+
+    declaration_paragraphs = [
+        "I hereby confirm that all details related to this special account have been provided truthfully and to the best of my knowledge.",
+        "This declaration aims to facilitate accurate verification and rightful assignment of the account within the testator's estate.",
+        "The account information including account type, number, and ownership has been thoroughly validated.",
+        "I understand that any misinformation can have legal repercussions, and this statement serves as an official record of this verification."
+    ]
+
+    p.setFont("Montserrat-Bold", 11)
+    p.setFillColor(colors.black)
+
+    y_declaration = height - 115
+    line_height = 16
+    max_width = width - 2 * margin
+
+    for paragraph in declaration_paragraphs:
+        wrapped_lines = simpleSplit(paragraph, "Montserrat-Bold", 11, max_width)
+        for line in wrapped_lines:
+            p.drawString(margin, y_declaration, line)
+            y_declaration -= line_height
+        y_declaration -= line_height
+
+    # Get heir names
+    assigned_to_ids = data.get("assigned_to_id", "")
+    heir_ids = [id_.strip() for id_ in assigned_to_ids.split(",")] if assigned_to_ids else []
+
+    heir_names = []
+    for idx, heir_id in enumerate(heir_ids, start=1):
+        try:
+            heir = Heir.objects.get(id=heir_id)
+            heir_names.append(f"{idx}. {heir.full_name}")
+        except Heir.DoesNotExist:
+            heir_names.append(f"{idx}. N/A")
+
+    heir_names_str = "\n".join(heir_names) if heir_names else "N/A"
+
+    table_data = [
+        ["Account Type", data.get("account_type", "N/A")],
+        ["Account Name", data.get("account_name", "N/A")],
+        ["Account Number", data.get("account_number", "N/A")],
+        ["Assigned To (Heir Full Name)", heir_names_str],
         ["Testator", testator_name],
         ["Date", current_date],
     ]
@@ -242,7 +397,6 @@ def generate_special_account_pdf(data, testator_name, settings):
     table.wrapOn(p, width, height)
     table.drawOn(p, margin, table_top - table_height)
 
-    # ----------- FOOTER -----------
     footer_y = 80
     line_spacing = 16
 
@@ -258,7 +412,6 @@ def generate_special_account_pdf(data, testator_name, settings):
     p.setFillColor(colors.orange)
     p.drawCentredString(width / 2, footer_y, "ISO 1496177")
 
-    # ----------- FINALIZE PDF -----------
     p.showPage()
     p.save()
     buffer.seek(0)
@@ -297,43 +450,55 @@ def generate_asset_pdf(data, testator_name, image_file=None):
         "All details regarding ownership, location, and valuation have been thoroughly checked and confirmed.",
         "Any false or misleading information may have legal consequences, and this declaration serves as a formal record of the asset verification."
     ]
-    
+
     p.setFont("Montserrat-Bold", 11)
     p.setFillColor(colors.black)
-
     y_declaration = height - 115
     line_height = 16
     max_width = width - 2 * margin
 
     for paragraph in declaration_paragraphs:
-        wrapped_lines = simpleSplit(paragraph, "Montserrat-Bold", 11, max_width)
-        for line in wrapped_lines:
+        wrapped = simpleSplit(paragraph, "Montserrat-Bold", 11, max_width)
+        for line in wrapped:
             p.drawString(margin, y_declaration, line)
             y_declaration -= line_height
-        y_declaration -= line_height  # extra space between paragraphs
+        y_declaration -= line_height  # paragraph spacing
+
+    # ------------------- ASSIGNEE LIST PROCESSING -------------------
+    assigned_ids = data.get("assigned_to", [])
+    if not isinstance(assigned_ids, list):
+        assigned_ids = [assigned_ids] if assigned_ids else []
+
+    assigned_lines = []
+    for idx, heir_id in enumerate(assigned_ids, start=1):
+        try:
+            heir = Heir.objects.get(pk=heir_id)
+            name = heir.full_name
+        except heir.DoesNotExist:
+            name = "Unknown"
+        assigned_lines.append(f"{idx}. {name}")
+    assigned_str = "\n".join(assigned_lines) if assigned_lines else "N/A"
 
     # ------------------- ASSET DATA TABLE -------------------
-    instruction_text = data.get("instruction", "N/A")
-    instruction_display = (instruction_text[:97] + "...") if len(instruction_text) > 100 else instruction_text
-
-    assigned_to_list = data.get("assigned_to", [])
-    assigned_to_str = ", ".join(assigned_to_list) if assigned_to_list else "N/A"
+    instruction = data.get("instruction", "N/A")
+    if len(instruction) > 100:
+        instruction = instruction[:97] + "..."
 
     table_data = [
         ["Testator", testator_name],
         ["Asset Type", data.get("asset_type", "N/A")],
         ["Location", data.get("location", "N/A")],
         ["Estimated Value", data.get("estimated_value", "N/A")],
-        ["Instruction", instruction_display],
-        ["Assigned To (Heir IDs)", assigned_to_str],
-        ["Date", str(date.today())],
+        ["Instruction", instruction],
+        ["Assigned To (Heir Names)", assigned_str],
+        ["Date", date.today().strftime("%d %B %Y")],
     ]
 
     table_width = width - 2 * margin
     col_widths = [table_width * 0.36, table_width * 0.64]
 
     table = Table(table_data, colWidths=col_widths)
-    style = TableStyle([
+    table.setStyle(TableStyle([
         ("FONTNAME", (0, 0), (-1, -1), "Montserrat-Bold"),
         ("FONTSIZE", (0, 0), (-1, -1), 11),
         ("TEXTCOLOR", (0, 0), (-1, -1), colors.black),
@@ -342,44 +507,40 @@ def generate_asset_pdf(data, testator_name, image_file=None):
         ("RIGHTPADDING", (0, 0), (-1, -1), 6),
         ("BOX", (0, 0), (-1, -1), 0.75, colors.grey),
         ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
-    ])
-    table.setStyle(style)
+    ]))
 
     table_top = y_declaration - 20
     table_height = len(table_data) * 18
     table.wrapOn(p, width, height)
     table.drawOn(p, margin, table_top - table_height)
 
-    # ------------------- IMAGE (optional) -------------------
+    # ------------------- OPTIONAL IMAGE -------------------
     if image_file:
         try:
-            image_y = table_top - table_height - 180  # leave some gap under the table
-            image = ImageReader(image_file)
-            img_width = 200
-            img_height = 150
-            p.drawImage(image, margin, image_y, width=img_width, height=img_height, preserveAspectRatio=True)
+            image_y = table_top - table_height - 180
+            img = ImageReader(image_file)
+            p.drawImage(img, margin, image_y, width=200, height=150, preserveAspectRatio=True)
         except Exception:
-            p.setFont("Montserrat-Thin", 10)
+            p.setFont("Montserrat-Bold", 10)
             p.setFillColor(colors.red)
             p.drawString(margin, table_top - table_height - 30, "⚠️ Image could not be displayed.")
 
     # ------------------- FOOTER -------------------
     footer_y = 80
-    line_spacing = 16
-
+    spacing = 16
     p.setStrokeColor(colors.orange)
     p.setLineWidth(0.5)
     p.line(margin, footer_y + 26, width - margin, footer_y + 26)
 
     p.setFont("Montserrat-Bold", 10)
     p.setFillColor(colors.black)
-    p.drawCentredString(width / 2, footer_y + (line_spacing * 2), f"Asset Record for: {testator_name}")
-    p.drawCentredString(width / 2, footer_y + line_spacing, "Seduta Will, P.O. Box 15777, Kawe, Dar es Salaam")
+    p.drawCentredString(width / 2, footer_y + spacing * 2, f"Asset Record for: {testator_name}")
+    p.drawCentredString(width / 2, footer_y + spacing, "Seduta Will, P.O. Box 15777, Kawe, Dar es Salaam")
 
     p.setFillColor(colors.orange)
     p.drawCentredString(width / 2, footer_y, "ISO 1496177")
 
-    # Finalize PDF
+    # ------------------- SAVE PDF -------------------
     p.showPage()
     p.save()
     buffer.seek(0)

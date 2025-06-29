@@ -1391,7 +1391,7 @@
           </div>
           <div class="modal-body">
             <div class="profile_update_form">
-              <form action="{% url 'administration:request_delete_audio_instruction' post_death_instruction.id %}" method="POST">
+              <form action="{% url 'administration:request_delete_post_death_instruction' post_death_instruction.id %}" method="POST">
                 {% csrf_token %}
                 <p>Are you sure you want to delete this post death instruction ?</p>
                 <div class="form-group d-flex justify-content-end gap-2">

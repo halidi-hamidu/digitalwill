@@ -27,7 +27,7 @@ from .models import ConfidentialInfo
 from .forms import ConfidentialInfoForm
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
-
+from django.core.files import File
 from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth import get_user_model
 from weasyprint import HTML
@@ -55,39 +55,6 @@ TOKEN_EXPIRY_SECONDS = 86400  # 1 day
 
 @cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
 @login_required
-# def verify_heir_view(request, token):
-#     try:
-#         # Validate token (max_age: 1 hour)
-#         signer.unsign(token, max_age=3600)
-
-#         # Check if there's a matching pending heir
-#         pending = PendingHeirVerification.objects.filter(token=token).first()
-#         if not pending:
-#             messages.error(request, "Invalid or already used verification link.")
-#             return redirect("administration:digitalwill")
-
-#         # Create a verified Heir
-#         Heir.objects.create(
-#             testator=pending.testator,
-#             full_name=pending.full_name,
-#             relationship=pending.relationship,
-#             date_of_birth=pending.date_of_birth,
-#             phone_number=pending.phone_number,
-#         )
-
-#         # Delete the pending record
-#         pending.delete()
-
-#         messages.success(request, f"Heir '{pending.full_name}' successfully verified and added.")
-#         return redirect("administration:digitalwill")
-
-#     except SignatureExpired:
-#         messages.error(request, "Verification link has expired.")
-#     except BadSignature:
-#         messages.error(request, "Invalid verification link.")
-
-#     return redirect("administration:digitalwill")
-
 def verify_heir_view(request, token):
     try:
         # Validate token (max_age: 1 hour)
@@ -230,26 +197,29 @@ def verify_asset_view(request, token):
 
     return redirect("administration:digitalwill")
 
-@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@cache_control(no_cache=True, privacy=True, must_revalidate=True, no_store=True)
 @login_required
 def resend_asset_verification_email(request):
-    # Retrieve pending asset from session
-    pending = request.session.get("pending_asset")
+    # Retrieve the latest pending asset for the user from DB
+    pending = PendingAssetVerification.objects.filter(testator__user=request.user).order_by('-created_at').first()
+
     if not pending:
         messages.error(request, "No pending asset found to resend.")
         return redirect("administration:digitalwill")
 
-    testator = get_object_or_404(UserProfile, id=pending["testator_id"])
+    testator = pending.testator
 
-    # Generate a new token and verification link
-    token = signer.sign(str(uuid.uuid4()))
+    # Generate a new token and update the model
+    new_token = signer.sign(str(uuid.uuid4()))
+    pending.token = new_token
+    pending.save()
+
     verification_url = request.build_absolute_uri(
-        reverse("administration:verify_asset", kwargs={"token": token})
+        reverse("administration:verify_asset", kwargs={"token": new_token})
     )
 
-    # Generate asset PDF (image is optional, placeholder for now)
-    image_file = None  # Optional image if available
-    pdf_buffer = generate_asset_pdf(pending, testator.full_name, image_file=image_file)
+    # Generate asset PDF from the stored asset_data JSON
+    pdf_buffer = generate_asset_pdf(pending.asset_data, testator.full_name)
 
     # Send the verification email
     email = EmailMessage(
@@ -263,6 +233,41 @@ def resend_asset_verification_email(request):
 
     messages.info(request, "Verification email resent. Please check your inbox.")
     return redirect("administration:digitalwill")
+
+
+# @cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+# @login_required
+# def resend_asset_verification_email(request):
+#     # Retrieve pending asset from session
+#     pending = request.session.get("pending_asset")
+#     if not pending:
+#         messages.error(request, "No pending asset found to resend.")
+#         return redirect("administration:digitalwill")
+
+#     testator = get_object_or_404(UserProfile, id=pending["testator_id"])
+
+#     # Generate a new token and verification link
+#     token = signer.sign(str(uuid.uuid4()))
+#     verification_url = request.build_absolute_uri(
+#         reverse("administration:verify_asset", kwargs={"token": token})
+#     )
+
+#     # Generate asset PDF (image is optional, placeholder for now)
+#     image_file = None  # Optional image if available
+#     pdf_buffer = generate_asset_pdf(pending, testator.full_name, image_file=image_file)
+
+#     # Send the verification email
+#     email = EmailMessage(
+#         subject="Verify Asset Addition (Resent)",
+#         body=f"Please confirm this asset by clicking the link below:\n{verification_url}",
+#         from_email=settings.DEFAULT_FROM_EMAIL,
+#         to=[request.user.email],
+#     )
+#     email.attach("asset_details.pdf", pdf_buffer.getvalue(), "application/pdf")
+#     email.send()
+
+#     messages.info(request, "Verification email resent. Please check your inbox.")
+#     return redirect("administration:digitalwill")
 
 @cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
 @login_required
@@ -347,41 +352,79 @@ def resend_special_account_verification(request):
     messages.success(request, "Verification email resent. Please check your inbox.")
     return redirect("administration:digitalwill")
 
-@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@cache_control(no_cache=True, no_store=True, must_revalidate=True)
 @login_required
 def verify_confidential_info(request, token):
     try:
-        # Validate the token (expires in TOKEN_EXPIRY_SECONDS)
-        signer.unsign(token, max_age=TOKEN_EXPIRY_SECONDS)
+        pending_id = signer.unsign(token, max_age=TOKEN_EXPIRY_SECONDS)
 
-        # Retrieve pending confidential info from session
-        pending = request.session.get("pending_confidential_info")
-        if not pending:
-            messages.error(request, "No pending confidential information found.")
-            return redirect("administration:digitalwill")
+        pending_update = get_object_or_404(PendingConfidentialInfoUpdate, id=pending_id)
 
-        # Fetch associated testator and heir
-        testator = get_object_or_404(UserProfile, id=pending["testator_id"])
-        heir = get_object_or_404(Heir, id=pending["assigned_to_id"])
+        # Update the linked ConfidentialInfo with pending data
+        confidential_info = pending_update.confidential_info
+        confidential_info.instructions = pending_update.instructions
+        confidential_info.assigned_to.set(pending_update.assigned_to.all())
 
-        # Create the ConfidentialInfo entry
-        ConfidentialInfo.objects.create(
-            testator=testator,
-            instructions=pending["instructions"],
-            assigned_to=heir,
-            # Note: confidential_file must be re-uploaded or stored temporarily to be saved here
-        )
+        if pending_update.uploaded_file:
+            # Replace confidential file with pending file
+            confidential_info.confidential_file.save(
+                pending_update.uploaded_file.name,
+                File(pending_update.uploaded_file.file),
+                save=False,
+            )
 
-        # Remove from session
-        del request.session["pending_confidential_info"]
+        confidential_info.save()
+
+        # Remove the pending update record (and its uploaded_file)
+        pending_update.uploaded_file.delete(save=False)
+        pending_update.delete()
+
         messages.success(request, "Confidential information verified and saved.")
 
     except SignatureExpired:
         messages.error(request, "Verification link has expired.")
     except BadSignature:
-        messages.error(request, "Invalid or tampered verification link.")
+        messages.error(request, "Invalid verification token.")
+    except Exception as e:
+        messages.error(request, f"Error during verification: {str(e)}")
 
     return redirect("administration:digitalwill")
+
+# @cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+# @login_required
+# def verify_confidential_info(request, token):
+#     try:
+#         # Validate the token (expires in TOKEN_EXPIRY_SECONDS)
+#         signer.unsign(token, max_age=TOKEN_EXPIRY_SECONDS)
+
+#         # Retrieve pending confidential info from session
+#         pending = request.session.get("pending_confidential_info")
+#         if not pending:
+#             messages.error(request, "No pending confidential information found.")
+#             return redirect("administration:digitalwill")
+
+#         # Fetch associated testator and heir
+#         testator = get_object_or_404(UserProfile, id=pending["testator_id"])
+#         heir = get_object_or_404(Heir, id=pending["assigned_to_id"])
+
+#         # Create the ConfidentialInfo entry
+#         ConfidentialInfo.objects.create(
+#             testator=testator,
+#             instructions=pending["instructions"],
+#             assigned_to=heir,
+#             # Note: confidential_file must be re-uploaded or stored temporarily to be saved here
+#         )
+
+#         # Remove from session
+#         del request.session["pending_confidential_info"]
+#         messages.success(request, "Confidential information verified and saved.")
+
+#     except SignatureExpired:
+#         messages.error(request, "Verification link has expired.")
+#     except BadSignature:
+#         messages.error(request, "Invalid or tampered verification link.")
+
+#     return redirect("administration:digitalwill")
 
 @cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
 @login_required
@@ -488,38 +531,35 @@ def verify_instruction(request, token):
     messages.success(request, "Post-death instructions saved successfully.")
     return redirect("administration:digitalwill")
 
-@cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
+@cache_control(no_cache=True, no_store=True, must_revalidate=True)
 @login_required
 def verify_audio(request, token):
     try:
-        # Validate token
+        # Validate token signature (raises BadSignature if invalid)
         signer.unsign(token)
     except BadSignature:
         messages.error(request, "Invalid or expired verification link.")
         return redirect("administration:digitalwill")
 
-    # Get audio data from session
-    data = request.session.get("pending_audio")
-    if not data:
+    # Find pending audio upload by token
+    try:
+        pending_audio = PendingAudioUpload.objects.get(token=token)
+    except PendingAudioUpload.DoesNotExist:
         messages.error(request, "No pending audio instruction found.")
         return redirect("administration:digitalwill")
 
-    # Reconstruct audio file from session data
-    from django.core.files.base import ContentFile
-    testator = get_object_or_404(UserProfile, id=data["testator_id"])
-    file_data = data["file_content"].encode("latin1")
-    audio_file = ContentFile(file_data, name=data["filename"])
-
-    # Save audio instruction
+    # Create final AudioInstruction
     AudioInstruction.objects.create(
-        testator=testator,
-        audio_file=audio_file,
+        testator=pending_audio.testator,
+        audio_file=pending_audio.uploaded_file,
     )
 
-    # Clear session
-    request.session.pop("pending_audio", None)
+    # Delete pending record after successful verification
+    pending_audio.delete()
+
     messages.success(request, "Audio instruction uploaded successfully.")
     return redirect("administration:digitalwill")
+
 
 @cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
 @login_required
@@ -830,62 +870,70 @@ def digitalwillview(request):
 
         messages.error(request, "Something went wrong. Please check the special account form.")
         return redirect("administration:digitalwill")
-
-    if request.method == "POST" and "add_confidential_btn" in request.POST:
-        confidential_form = ConfidentialInfoForm(request.POST, request.FILES)
         
+    if request.method == "POST" and "add_confidential_info_btn" in request.POST:
+        confidential_form = ConfidentialInfoForm(request.POST, request.FILES)
         if confidential_form.is_valid():
-            # Extract cleaned data
-            data = {
-                "instructions": confidential_form.cleaned_data["instructions"],
-                "assigned_to_id": str(confidential_form.cleaned_data["assigned_to"].id),
-                "testator_id": str(userprofile.id),
-            }
+            user = request.user
+            userprofile = user.user_userprofile
 
-            # Handle uploaded confidential file (store content and filename in session temporarily)
+            instructions = confidential_form.cleaned_data["instructions"]
+            assigned_heirs = confidential_form.cleaned_data["assigned_to"]  # QuerySet of Heir
             uploaded_file = request.FILES.get("confidential_file")
-            request.session["pending_confidential"] = data
-            request.session["confidential_filename"] = uploaded_file.name if uploaded_file else None
-            request.session["confidential_file_content"] = (
-                uploaded_file.read().decode('latin1') if uploaded_file else None
+
+            # For first-time confidential info, you might create ConfidentialInfo first or handle differently.
+            # Here, let's assume you create an empty ConfidentialInfo to link:
+            confidential_info = ConfidentialInfo.objects.create(
+                testator=userprofile,
+                instructions=""  # empty, will be updated on verification
             )
 
-            # Create signed token and verification URL
-            token = signer.sign(str(uuid.uuid4()))
-            verification_url = request.build_absolute_uri(
-                reverse("administration:verify_confidential", kwargs={"token": token})
+            # Create pending update record
+            pending_update = PendingConfidentialInfoUpdate.objects.create(
+                confidential_info=confidential_info,
+                instructions=instructions,
+                user=user,
+                created_at=timezone.now(),
             )
-
-            # Generate branded PDF summary for email
-            pdf = generate_confidential_pdf(data, userprofile.full_name)
-
-            # Compose verification email with PDF and file attachment (if any)
-            email = EmailMessage(
-                subject="Verify Confidential Info Submission",
-                body=(
-                    "A confidential file is about to be submitted.\n"
-                    "Please confirm this action by clicking the link below:\n\n"
-                    f"{verification_url}"
-                ),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                to=[request.user.email],
-            )
-            email.attach("confidential_summary.pdf", pdf.getvalue(), "application/pdf")
+            pending_update.assigned_to.set(assigned_heirs)
 
             if uploaded_file:
-                # Rewind file pointer to read content again for attachment
+                pending_update.uploaded_file.save(uploaded_file.name, uploaded_file)
+
+            # Create signed token for this pending update record
+            token = signer.sign(str(pending_update.id))
+
+            verification_url = request.build_absolute_uri(
+                reverse("administration:verify_confidential_info", kwargs={"token": token})
+            )
+
+            email_subject = "Verify Confidential Info Submission"
+            email_body = (
+                "A confidential file is about to be submitted.\n"
+                "Please confirm by clicking the link below:\n\n"
+                f"{verification_url}"
+            )
+
+            email = EmailMessage(
+                subject=email_subject,
+                body=email_body,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[user.email],
+            )
+
+            if uploaded_file:
                 uploaded_file.seek(0)
                 email.attach(uploaded_file.name, uploaded_file.read(), uploaded_file.content_type)
 
-            email.send()
+            email.send(fail_silently=False)
 
             messages.info(request, "Verification email sent. Please confirm to submit confidential info.")
             return redirect("administration:digitalwill")
 
-        messages.error(request, "Something went wrong. Please check your submission.")
+        messages.error(request, "Invalid form submission.")
         return redirect("administration:digitalwill")
     
-    if request.method == "POST" and "add_executor_btn" in request.POST:
+    if request.method == "POST" and "add_executer_btn" in request.POST:
         # Prevent multiple executors per testator
         if Executor.objects.filter(testator=userprofile).exists():
             messages.warning(request, "You already have an executor assigned.")
@@ -932,7 +980,7 @@ def digitalwillview(request):
         messages.error(request, f"Form error: {executor_form.errors.as_text()}")
         return redirect("administration:digitalwill")
     
-    if request.method == "POST" and "add_instruction_btn" in request.POST:
+    if request.method == "POST" and "add_post_death_instruction_btn" in request.POST:
         instruction_form = PostDeathInstructionForm(request.POST)
         
         if instruction_form.is_valid():
@@ -976,7 +1024,7 @@ def digitalwillview(request):
         messages.error(request, "Please correct the errors in your form.")
         return redirect("administration:digitalwill")
 
-    if request.method == "POST" and "add_audio_btn" in request.POST:
+    if request.method == "POST" and "add_audio_instruction_btn" in request.POST:
         audio_form = AudioInstructionForm(request.POST, request.FILES)
         
         if audio_form.is_valid():
@@ -1398,7 +1446,7 @@ def confirm_delete_special_account(request, token):
 
     # Mark the token as used to prevent reuse
     token_obj.is_used = True
-    token_obj.save()
+    # token_obj.save()
 
     # Generate a PDF confirmation of deletion
     buffer = BytesIO()
@@ -1856,7 +1904,7 @@ def confirm_delete_executor(request, uidb64, token):
 
 @cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
 @login_required
-def request_update_post_death(request):
+def request_update_post_death(request, id):
     # Retrieve the post-death instruction for the logged-in user (testator)
     instruction = get_object_or_404(PostDeathInstruction, testator__user=request.user)
 

@@ -62,6 +62,17 @@ class Asset(models.Model):
 
     def __str__(self):
         return f"{self.asset_type} - {self.location}"
+    
+class PendingAssetVerification(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    testator = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    asset_data = models.JSONField()  # store partial asset data here (instructions, assigned_to IDs, etc.)
+    created_at = models.DateTimeField(auto_now_add=True)
+    token = models.CharField(max_length=255, blank=True, null=True)  # store token to validate requests
+
+    def __str__(self):
+        return f"Pending Asset for {self.testator.full_name} at {self.created_at}"
+
 
 # 4. Business or Special Accounts
 class SpecialAccount(models.Model):
@@ -168,3 +179,15 @@ class AudioInstruction(models.Model):
 
     def __str__(self):
         return f"Audio by {self.testator.full_name}"
+
+class PendingAudioUpload(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    testator = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    uploaded_file = models.FileField(upload_to='pending_audio_uploads/')
+    filename = models.CharField(max_length=255)
+    token = models.CharField(max_length=255, unique=True)  # Store signed token here for verification
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Pending audio upload by {self.testator} ({self.filename})"
