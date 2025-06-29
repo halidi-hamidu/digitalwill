@@ -27,6 +27,7 @@ from django.contrib.auth.decorators import login_required
 from django.template.loader import render_to_string
 from django.utils.encoding import force_str
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from django.utils import timezone
 
 import uuid
 import json
@@ -314,6 +315,7 @@ signer = signing.TimestampSigner()
 @cache_control(no_cache=True, privacy=True, must_revalidate=True, no_store=True)
 @login_required
 def personalinformationview(request):
+    get_current_year = timezone.now
     userprofile_instance = get_object_or_404(UserProfile, user=request.user)
     user_instance = request.user
 
@@ -405,7 +407,8 @@ def personalinformationview(request):
         "userprofile_form": userprofile_form,
         "userprofile": userprofile_instance,
         "userform": userform,
-        "user_instance":user_instance
+        "user_instance":user_instance,
+        "get_current_year":get_current_year
     })
 
 
@@ -580,10 +583,12 @@ def verify_email(request, token):
 @cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
 @login_required
 def accountsettingview(request):
+    get_current_year = timezone.now
     user_accounts = get_user_model().objects.all().order_by("-id")
     templates = "authentication/account_setting.html"
     context = {
         "user_accounts":user_accounts,
+        "get_current_year":get_current_year
         # "userprofileform":userprofileform
     }
     return render(request, templates, context)

@@ -33,6 +33,7 @@ from django.contrib.auth import get_user_model
 from weasyprint import HTML
 from django.db.models import Sum, Count
 import json
+from datetime import date
 
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 import six
@@ -602,7 +603,7 @@ def verify_asset_delete(request, token):
 @login_required
 def dashboardview(request):
     user_profile = request.user.user_userprofile
-
+    get_current_year = timezone.now
     heirs = Heir.objects.filter(testator=user_profile)
     assets = Asset.objects.filter(testator=user_profile)
     special_accounts = SpecialAccount.objects.filter(testator=user_profile)
@@ -657,6 +658,16 @@ def dashboardview(request):
         "special_account_count": SpecialAccount.objects.all().count(),
         "pending_verifications": PendingHeirVerification.objects.all().count(),
         "post_death_instructions": PostDeathInstruction.objects.all().exists(),
+
+        "heir_count1": Heir.objects.filter(testator = user_profile).count(),
+        "asset_count1": Asset.objects.filter(testator = user_profile).count(),
+        "confidential_info_count1": ConfidentialInfo.objects.filter(testator = user_profile).count(),
+        "audio_instruction_count1": AudioInstruction.objects.filter(testator = user_profile).count(),
+
+        "special_account_count2": SpecialAccount.objects.filter(testator = user_profile).count(),
+        "post_death_instructions2": PostDeathInstruction.objects.filter(testator = user_profile).count(),
+        "executor_count2": Executor.objects.filter(testator = user_profile).count(),
+        "get_current_year":get_current_year
     }
 
     return render(request, 'administration/dashboard.html', context)
@@ -664,6 +675,7 @@ def dashboardview(request):
 @cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
 @login_required
 def digitalwillview(request):
+    get_current_year = timezone.now
     userprofile = UserProfile.objects.filter(user = request.user).first()
     heirs = Heir.objects.filter(testator = userprofile)
     assets = Asset.objects.filter(testator = userprofile)
@@ -1081,6 +1093,7 @@ def digitalwillview(request):
         "executors": executors,
         "post_death_instructions": post_death_instructions,
         "audio_instructions": audio_instructions,
+        "get_current_year":get_current_year
     }
 
     return render(request, templates, context)
@@ -2242,6 +2255,7 @@ def confirm_delete_audio_instruction(request, uidb64, token):
     return redirect("administration:digitalwill")
 
 def beneficiaryview(request):
+    get_current_year = timezone.now
     userprofile = UserProfile.objects.filter(user = request.user).first()
     assets = Asset.objects.filter(testator = userprofile)
     special_accounts = SpecialAccount.objects.filter(testator = userprofile)
@@ -2258,5 +2272,6 @@ def beneficiaryview(request):
         "confidential_infos": confidential_infos,
         "post_death_instructions": post_death_instructions,
         "audio_instructions": audio_instructions,
+        "get_current_year":get_current_year
     }
     return render(request, templates, context)

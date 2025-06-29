@@ -3,6 +3,7 @@
 {% load humanize %}
 {% load widget_tweaks %}
 {% block title %}Wills{% endblock %}
+{% block footer %}{{get_current_year|date:"Y"}}{% endblock %}
 
 {% block content %}
 <div class="row">
