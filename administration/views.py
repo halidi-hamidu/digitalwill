@@ -390,42 +390,6 @@ def verify_confidential_info(request, token):
 
     return redirect("administration:digitalwill")
 
-# @cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
-# @login_required
-# def verify_confidential_info(request, token):
-#     try:
-#         # Validate the token (expires in TOKEN_EXPIRY_SECONDS)
-#         signer.unsign(token, max_age=TOKEN_EXPIRY_SECONDS)
-
-#         # Retrieve pending confidential info from session
-#         pending = request.session.get("pending_confidential_info")
-#         if not pending:
-#             messages.error(request, "No pending confidential information found.")
-#             return redirect("administration:digitalwill")
-
-#         # Fetch associated testator and heir
-#         testator = get_object_or_404(UserProfile, id=pending["testator_id"])
-#         heir = get_object_or_404(Heir, id=pending["assigned_to_id"])
-
-#         # Create the ConfidentialInfo entry
-#         ConfidentialInfo.objects.create(
-#             testator=testator,
-#             instructions=pending["instructions"],
-#             assigned_to=heir,
-#             # Note: confidential_file must be re-uploaded or stored temporarily to be saved here
-#         )
-
-#         # Remove from session
-#         del request.session["pending_confidential_info"]
-#         messages.success(request, "Confidential information verified and saved.")
-
-#     except SignatureExpired:
-#         messages.error(request, "Verification link has expired.")
-#     except BadSignature:
-#         messages.error(request, "Invalid or tampered verification link.")
-
-#     return redirect("administration:digitalwill")
-
 @cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
 @login_required
 def resend_confidential_info_verification(request):

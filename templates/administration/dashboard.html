@@ -16,41 +16,41 @@
 {% if request.user.user_userprofile.roles == "Admin" and request.user.is_superuser or request.user.is_staff %}
 <div class="row">
   <div class="col-md-3 mb-2">
-    <div class="card text-white bg-info">
+    <div class="card shadow-sm" style="background-color: white;">
       <div class="card-body text-center">
-        <i class="bi bi-people-fill display-4"></i>
-        <h5 class="card-title mt-2">Heirs</h5>
-        <p class="card-text">{{ heir_count }}</p>
+        <i class="bi bi-people-fill display-4" style="color: var(--main-orange);"></i>
+        <h5 class="card-title mt-2" style="color: var(--main-orange);">Heirs</h5>
+        <p class="card-text" style="color: var(--main-orange);">{{ heir_count }}</p>
       </div>
     </div>
   </div>
 
   <div class="col-md-3 mb-2">
-    <div class="card text-white bg-info">
+    <div class="card shadow-sm" style="background-color: white;">
       <div class="card-body text-center">
-        <i class="bi bi-box-seam display-4"></i>
-        <h5 class="card-title mt-2">Assets</h5>
-        <p class="card-text">{{ asset_count }}</p>
+        <i class="bi bi-box-seam display-4" style="color: var(--main-orange);"></i>
+        <h5 class="card-title mt-2" style="color: var(--main-orange);">Assets</h5>
+        <p class="card-text" style="color: var(--main-orange);">{{ asset_count }}</p>
       </div>
     </div>
   </div>
 
   <div class="col-md-3 mb-2">
-    <div class="card text-white bg-info">
+    <div class="card shadow-sm" style="background-color: white;">
       <div class="card-body text-center">
-        <i class="bi bi-lock-fill display-4"></i>
-        <h5 class="card-title mt-2">Confidential Info</h5>
-        <p class="card-text">{{ confidential_info_count }}</p>
+        <i class="bi bi-lock-fill display-4" style="color: var(--main-orange);"></i>
+        <h5 class="card-title mt-2" style="color: var(--main-orange);">Confidential Info</h5>
+        <p class="card-text" style="color: var(--main-orange);">{{ confidential_info_count }}</p>
       </div>
     </div>
   </div>
 
   <div class="col-md-3 mb-2">
-    <div class="card text-white bg-info">
-      <div class="card-body text-center">
-        <i class="bi bi-soundwave display-4"></i>
-        <h5 class="card-title mt-2">Audio Instructions</h5>
-        <p class="card-text">{{ audio_instruction_count }}</p>
+    <div class="card shadow-sm" style="background-color: white;">
+      <div class="card-body">
+        <i class="bi bi-soundwave display-4" style="color: var(--main-orange);"></i>
+        <h5 class="card-title mt-2" style="color: var(--main-orange);">Audio Instructions</h5>
+        <p class="card-text" style="color: var(--main-orange);">{{ audio_instruction_count }}</p>
       </div>
     </div>
   </div>
@@ -58,10 +58,10 @@
 
 <div class="row">
   <div class="col-md-12">
-    <div class="card shadow-sm mb-4">
+    <div class="card shadow-sm mb-4" style="background-color: white;">
       <div class="card-header text-info d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><i class="bi bi-bar-chart-fill me-2"></i>Dashboard Summary</h5>
-        <small class="text-info-50">Latest snapshot</small>
+        <h5 class="mb-0" style="color: var(--main-orange);"><i class="bi bi-bar-chart-fill me-2"></i>Dashboard Summary</h5>
+        <small class="" style="color: var(--main-orange);">Latest snapshot</small>
       </div>
       <div class="card-body">
         <canvas id="summaryBarChart" height="100"></canvas>
@@ -73,28 +73,28 @@
 {% else %}
 <div class="row text-center">
   <div class="col-md-3">
-    <div class="summary-card bg-info">
+    <div class="summary-card">
       <div><i class="bi bi-people-fill summary-icon"></i></div>
       <h4>{{ heirs|length }}</h4>
       <p>Heirs</p>
     </div>
   </div>
   <div class="col-md-3">
-    <div class="summary-card bg-info">
+    <div class="summary-card">
       <div><i class="bi bi-box-fill summary-icon"></i></div>
       <h4>{{ assets|length }}</h4>
       <p>Assets</p>
     </div>
   </div>
   <div class="col-md-3">
-    <div class="summary-card bg-info">
+    <div class="summary-card">
       <div><i class="bi bi-wallet2 summary-icon"></i></div>
       <h4>{{ special_accounts|length }}</h4>
       <p>Special Accounts</p>
     </div>
   </div>
   <div class="col-md-3">
-    <div class="summary-card bg-info">
+    <div class="summary-card">
       <div><i class="bi bi-currency-dollar summary-icon"></i></div>
       <h4>{{ total_asset_value|intcomma }}</h4>
       <p>Total Asset Value</p>
@@ -106,8 +106,8 @@
   <div class="col-md-12">
     <div class="card shadow-sm">
       <div class="card-header text-info d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><i class="bi bi-bar-chart-fill me-2"></i>Asset Value by Type</h5>
-        <small class="text-info-50">Latest snapshot</small>
+        <h5 class="mb-0" style="color: var(--main-orange);"><i class="bi bi-bar-chart-fill me-2"></i>Asset Value by Type</h5>
+        <small class="" style="color: var(--main-orange);">Latest snapshot</small>
       </div>
       <div class="card-body">
         <canvas id="assetBarChart" height="100"></canvas>
