@@ -55,19 +55,52 @@ TOKEN_EXPIRY_SECONDS = 86400  # 1 day
 
 @cache_control(no_cache = True, privacy = True, must_revalidate = True, no_store = True)
 @login_required
+# def verify_heir_view(request, token):
+#     try:
+#         # Validate token (max_age: 1 hour)
+#         signer.unsign(token, max_age=3600)
+
+#         # Check if there's a matching pending heir
+#         pending = PendingHeirVerification.objects.filter(token=token).first()
+#         if not pending:
+#             messages.error(request, "Invalid or already used verification link.")
+#             return redirect("administration:digitalwill")
+
+#         # Create a verified Heir
+#         Heir.objects.create(
+#             testator=pending.testator,
+#             full_name=pending.full_name,
+#             relationship=pending.relationship,
+#             date_of_birth=pending.date_of_birth,
+#             phone_number=pending.phone_number,
+#         )
+
+#         # Delete the pending record
+#         pending.delete()
+
+#         messages.success(request, f"Heir '{pending.full_name}' successfully verified and added.")
+#         return redirect("administration:digitalwill")
+
+#     except SignatureExpired:
+#         messages.error(request, "Verification link has expired.")
+#     except BadSignature:
+#         messages.error(request, "Invalid verification link.")
+
+#     return redirect("administration:digitalwill")
+
 def verify_heir_view(request, token):
     try:
         # Validate token (max_age: 1 hour)
         signer.unsign(token, max_age=3600)
 
-        # Check if there's a matching pending heir
+        # Check for a valid pending heir record
         pending = PendingHeirVerification.objects.filter(token=token).first()
         if not pending:
             messages.error(request, "Invalid or already used verification link.")
             return redirect("administration:digitalwill")
 
-        # Create a verified Heir
-        Heir.objects.create(
+        # Create verified heir record
+        heir = Heir.objects.create(
             testator=pending.testator,
             full_name=pending.full_name,
             relationship=pending.relationship,
@@ -75,18 +108,64 @@ def verify_heir_view(request, token):
             phone_number=pending.phone_number,
         )
 
-        # Delete the pending record
+        # Generate PDF summary
+        pdf_buffer = generate_heir_verification_pdf(heir)
+
+        # Send confirmation to the heir (via testator's email)
+        heir_email = EmailMessage(
+            subject="Heir Verification Successful — Seduta Will",
+            body=(
+                f"Dear {heir.full_name},\n\n"
+                "You have been successfully verified and added as an official heir in the Seduta Will system.\n"
+                "Attached is a summary of your registered details.\n\n"
+                "If this was not authorized by you, please contact our support team immediately.\n\n"
+                "— Seduta Will"
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[pending.testator.email],
+        )
+        heir_email.attach("heir_verification.pdf", pdf_buffer.getvalue(), "application/pdf")
+        heir_email.send(fail_silently=False)
+
+        # Notify all admins
+        admin_emails = list(
+            User.objects.filter(user_userprofile__roles="Admin")
+                        .values_list("email", flat=True)
+        )
+        if admin_emails:
+            admin_email = EmailMessage(
+                subject=f"New Verified Heir: {heir.full_name}",
+                body=(
+                    f"Dear Admin,\n\n"
+                    f"The following heir has been verified and added to the system under testator {heir.testator.get_full_name()}:\n\n"
+                    f"Name: {heir.full_name}\n"
+                    f"Relationship: {heir.relationship}\n"
+                    f"Phone: {heir.phone_number}\n"
+                    f"DOB: {heir.date_of_birth.strftime('%d %B %Y') if heir.date_of_birth else 'N/A'}\n\n"
+                    "Attached is a summary in PDF format.\n\n"
+                    "— Seduta Will System"
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=admin_emails,
+            )
+            admin_email.attach("verified_heir_summary.pdf", pdf_buffer.getvalue(), "application/pdf")
+            admin_email.send(fail_silently=False)
+
+        # Delete token entry
         pending.delete()
 
-        messages.success(request, f"Heir '{pending.full_name}' successfully verified and added.")
+        messages.success(request, f"Heir '{heir.full_name}' successfully verified and added.")
         return redirect("administration:digitalwill")
 
     except SignatureExpired:
         messages.error(request, "Verification link has expired.")
     except BadSignature:
         messages.error(request, "Invalid verification link.")
+    except Exception as e:
+        messages.error(request, f"An unexpected error occurred: {e}")
 
     return redirect("administration:digitalwill")
+
 
 def asset_summary_chart(request):
     user = request.user.userprofile
@@ -950,6 +1029,9 @@ def digitalwillview(request):
     asset_form = AssetForm()
     heir_form = HeirForm()
 
+    heir_instance = Heir.objects.filter(testator = request.user.user_userprofile).first()
+    heir_form_instance = HeirForm(instance = heir_instance)
+
     # Initialize forms with existing instances for editing
     asset_form_instance = AssetForm(instance=asset_instance)
     special_account_form_instance = SpecialAccountForm(instance=special_account_instance)
@@ -977,6 +1059,8 @@ def digitalwillview(request):
         "executor_form_instance": executor_form_instance,
         "post_death_instruction_form_instance": post_death_instruction_form_instance,
         "audio_instruction_form_instance":audio_instruction_form_instance,
+        "heir_form_instance":heir_form_instance,
+        "heir_instance":heir_instance,
 
         "heirs": heirs,
         "assets": assets,

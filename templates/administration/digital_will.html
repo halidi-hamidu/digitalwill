@@ -129,7 +129,13 @@
                                         <td>{{asset.asset_type}}</td>
                                         <td>{{asset.location}}</td>
                                         <td>{{asset.estimated_value|intcomma}}</td>
-                                        <td>{{asset.assigned_to}}</td>
+                                        <td>
+                                            <ul>
+                                                {% for assigned_to in asset.assigned_to.all %}
+                                                    <li>{{assigned_to.full_name}}</li>
+                                                {% endfor %}
+                                            </ul> 
+                                        </td>
                                         <td>
                                             <a href="#" data-bs-toggle="modal" data-bs-target="#updateAssetModel{{asset.id}}"><i class="bi bi-pencil-square"></i></a>
                                             <a href="#" data-bs-toggle="modal" data-bs-target="#deleteAssetModel{{asset.id}}"><i class="bi bi-trash"></i></a>
@@ -176,7 +182,14 @@
                                         <td>{{special_account.account_type}}</td>
                                         <td>{{special_account.account_name}}</td>
                                         <td>{{special_account.account_number}}</td>
-                                        <td>{{special_account.assigned_to}}</td>
+                                        <td>
+                                            <ul>
+                                                {% for assigned_to in special_account.assigned_to.all %}
+                                                    <li>{{assigned_to.full_name}}</li>
+                                                {% endfor %}
+                                            </ul> 
+                                        </td>
+                                        <!-- <td>{{special_account.assigned_to}}</td> -->
                                         <td>
                                             <a href="" data-bs-toggle="modal" data-bs-target="#updateSpecialAccountModel{{special_account.id}}"><i class="bi bi-pencil-square"></i></a>
                                             <a href="" data-bs-toggle="modal" data-bs-target="#deleteSpecialAccountModel{{ special_account.id }}"><i class="bi bi-trash"></i></a>
@@ -220,7 +233,14 @@
                                         <td>{{confidential_info.testator|title}}</td>
                                         <td>{{confidential_info.instructions}}</td>
                                         <td>{{confidential_info.confidential_file}}</td>
-                                        <td>{{confidential_info.assigned_to}}</td>
+                                        <td>
+                                            <ul>
+                                                {% for assigned_to in confidential_info.assigned_to.all %}
+                                                    <li>{{assigned_to.full_name}}</li>
+                                                {% endfor %}
+                                            </ul> 
+                                        </td>
+                                        <!-- <td>{{confidential_info.assigned_to}}</td> -->
                                         <td>
                                             <a href="" data-bs-toggle="modal" data-bs-target="#updateConfidentialInfoModel{{confidential_info.id}}"><i class="bi bi-pencil-square"></i></a>
                                             <a href="" data-bs-toggle="modal" data-bs-target="#deleteSpecialConfidentialInfoModel{{ confidential_info.id }}"><i class="bi bi-trash"></i></a>
@@ -439,7 +459,7 @@
                     </div>
                     <div class="mb-2 form-group">
                         <label for="">Assigned To</label>
-                        {% render_field asset_form.assigned_to name="assigned_to" class="form-control input-sm" %}
+                        {% render_field asset_form_instance.assigned_to name="assigned_to" class="form-control select2 input-sm" %}
                     </div>
 
                     <div class="form-roup d-flex justify-content-end gap-2">
@@ -480,7 +500,7 @@
                     </div>
                     <div class="mb-2 form-group">
                         <label for="">Assigned To</label>
-                        {% render_field special_account_form.assigned_to name="assigned_to" class="form-control input-sm" %}
+                        {% render_field special_account_form.assigned_to name="assigned_to" class="form-control select2 input-sm" %}
                     </div>
 
                     <div class="form-roup d-flex justify-content-end gap-2">
@@ -516,7 +536,7 @@
                     </div>
                     <div class="mb-2 form-group">
                         <label for="">Assigned To</label>
-                        {% render_field confidential_info_form.assigned_to name="assigned_to" class="form-control input-sm" %}
+                        {% render_field confidential_info_form.assigned_to name="assigned_to" class="form-control select2 input-sm" %}
                     </div>
 
                     <div class="form-roup d-flex justify-content-end gap-2">
@@ -553,7 +573,7 @@
                     </div>
                     <div class="mb-2 form-group">
                         <label for="">Phonenumber</label>
-                        {% render_field executor_form.phone_number name="phone_number" class="form-control input-sm" %}
+                        {% render_field executor_form.phone_number name="phone_number" class="form-control select2 input-sm" %}
                     </div>
 
                     <div class="form-roup d-flex justify-content-end gap-2">
@@ -809,7 +829,7 @@
                 </div>
                 <div class="mb-2 form-group">
                     <label for="">Assigned To</label>
-                    {% render_field asset_form_instance.assigned_to name="assigned_to" class="form-control input-sm" %}
+                    {% render_field asset_form_instance.assigned_to name="assigned_to" class="form-control select2 input-sm" %}
                     current heirs: 
                     <ul>
                         {% if asset.assigned_to.all %}
@@ -961,7 +981,7 @@
                 </div>
                 <div class="mb-2 form-group">
                     <label for="">Assigned To</label>
-                    {% render_field special_account_form_instance.assigned_to name="assigned_to" class="form-control input-sm" %}
+                    {% render_field special_account_form_instance.assigned_to name="assigned_to" class="form-control select2 input-sm" %}
                 </div>
                 
                 <div class="form-roup d-flex justify-content-end gap-2">
@@ -1091,7 +1111,7 @@
                 </div>
                 <div class="mb-2 form-group">
                     <label for="">Assigned To</label>
-                    {% render_field confidential_info_form_instance.assigned_to name="assigned_to" class="form-control input-sm" %}
+                    {% render_field confidential_info_form_instance.assigned_to name="assigned_to" class="form-control select2 input-sm" %}
                 </div>
                 <div class="form-roup d-flex justify-content-end gap-2">
                     <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>

@@ -1244,42 +1244,142 @@ def generate_pdf_from_template(template_name, context=None):
     pdf_buffer.seek(0)  # rewind buffer before returning
     return pdf_buffer
 
-# PDF Generator for Asyncronization tasks using celery librarys
 def generate_model_pdf(user, models_data):
     buffer = BytesIO()
-    pdf = canvas.Canvas(buffer, pagesize=A4)
+    c = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
+    margin = 50
+    current_date = datetime.now().strftime("%d %B %Y")
 
-    # Top Content
-    pdf.setFont("Montserrat-Bold", 16)
-    pdf.drawString(40, height - 50, "Seduta Will")  # Logo placeholder
-    pdf.setFont("Montserrat-Bold", 10)
-    pdf.drawRightString(width - 40, height - 40, datetime.now().strftime("%Y-%m-%d %H:%M"))
+    # ------------------- HEADER -------------------
+    c.setFont("Montserrat-Bold", 20)
+    c.setFillColor(colors.orange)
+    c.drawString(margin, height - 50, "🧾 Seduta Will")
 
-    y_position = height - 100
+    c.setFont("Montserrat-Bold", 12)
+    c.setFillColor(colors.black)
+    c.drawRightString(width - margin, height - 45, current_date)
 
-    # Middle Content
+    c.setStrokeColor(colors.orange)
+    c.setLineWidth(1.5)
+    c.line(margin, height - 60, width - margin, height - 60)
+
+    # ------------------- MAIN CONTENT -------------------
+    y_position = height - 90
+
     for title, entries in models_data.items():
-        pdf.setFont("Montserrat-Bold", 14)
-        pdf.drawString(40, y_position, title)
+        c.setFont("Montserrat-Bold", 14)
+        c.setFillColor(colors.orange)
+        c.drawString(margin, y_position, title)
         y_position -= 20
 
         for entry in entries:
-            pdf.setFont("Montserrat-Bold", 10)
+            c.setFont("Montserrat-Bold", 10.5)
+            c.setFillColor(colors.black)
             for key, value in entry.items():
-                pdf.drawString(50, y_position, f"{key}: {value}")
-                y_position -= 15
-                if y_position < 100:
-                    pdf.showPage()
-                    y_position = height - 100
+                c.drawString(margin + 10, y_position, f"{key}: {value}")
+                y_position -= 14
+                if y_position < 150:
+                    c.showPage()
+                    y_position = height - 90
+                    # Repeat header on new page
+                    c.setFont("Montserrat-Bold", 20)
+                    c.setFillColor(colors.orange)
+                    c.drawString(margin, height - 50, "🧾 Seduta Will")
+                    c.setFont("Montserrat-Bold", 12)
+                    c.setFillColor(colors.black)
+                    c.drawRightString(width - margin, height - 45, current_date)
+                    c.setStrokeColor(colors.orange)
+                    c.setLineWidth(1.5)
+                    c.line(margin, height - 60, width - margin, height - 60)
 
-    # Footer Content
-    pdf.setFont("Montserrat-Bold", 8)
-    pdf.drawString(40, 40, f"PDF ID: {uuid.uuid4()}")
-    pdf.drawString(40, 25, "Company Address: Seduta HQ, Dar es Salaam, Tanzania")
-    pdf.drawRightString(width - 40, 25, "ISO 27001:2023 Certified")
+    # ------------------- DECLARATION -------------------
+    declaration_paragraphs = [
+        "I hereby declare that the above information is accurate and reflects my current data as recorded in the Seduta Will system.",
+        "This document is an official representation of the models and associated records under my account.",
+        "Any discrepancies in the above may lead to formal review or necessary amendments as required by policy.",
+        "I acknowledge that this information may be used for verification and compliance purposes in line with Seduta Will guidelines."
+    ]
 
-    pdf.showPage()
-    pdf.save()
+    styles = getSampleStyleSheet()
+    para_style = ParagraphStyle(
+        name="Justified",
+        parent=styles["Normal"],
+        fontName="Montserrat-Bold",
+        fontSize=10.5,
+        leading=14,
+        alignment=4  # Justified
+    )
+
+    y_decl = y_position - 30
+    for para in declaration_paragraphs:
+        p = Paragraph(para, para_style)
+        w, h = p.wrap(width - 2 * margin, height)
+        if y_decl - h < 80:
+            c.showPage()
+            y_decl = height - 100
+        p.drawOn(c, margin, y_decl - h)
+        y_decl -= (h + 10)
+
+    # ------------------- FOOTER -------------------
+    footer_y = 60
+    line_spacing = 16
+
+    c.setStrokeColor(colors.orange)
+    c.setLineWidth(0.7)
+    c.line(margin, footer_y + 36, width - margin, footer_y + 36)
+
+    c.setFont("Montserrat-Bold", 10)
+    c.setFillColor(colors.black)
+    c.drawCentredString(width / 2, footer_y + (line_spacing * 2),
+                        f"PDF ID: {user.id}-{datetime.now().strftime('%Y%m%d%H%M%S')}")
+    c.drawCentredString(width / 2, footer_y + line_spacing,
+                        "Seduta Will, P.O. Box 15777, Kawe, Dar es Salaam")
+
+    c.setFillColor(colors.orange)
+    c.drawCentredString(width / 2, footer_y, "ISO 1496177")
+
+    c.showPage()
+    c.save()
     buffer.seek(0)
     return buffer
+
+# PDF Generator for Asyncronization tasks using celery librarys
+# def generate_model_pdf(user, models_data):
+#     buffer = BytesIO()
+#     pdf = canvas.Canvas(buffer, pagesize=A4)
+#     width, height = A4
+
+#     # Top Content
+#     pdf.setFont("Montserrat-Bold", 16)
+#     pdf.drawString(40, height - 50, "Seduta Will")  # Logo placeholder
+#     pdf.setFont("Montserrat-Bold", 10)
+#     pdf.drawRightString(width - 40, height - 40, datetime.now().strftime("%Y-%m-%d %H:%M"))
+
+#     y_position = height - 100
+
+#     # Middle Content
+#     for title, entries in models_data.items():
+#         pdf.setFont("Montserrat-Bold", 14)
+#         pdf.drawString(40, y_position, title)
+#         y_position -= 20
+
+#         for entry in entries:
+#             pdf.setFont("Montserrat-Bold", 10)
+#             for key, value in entry.items():
+#                 pdf.drawString(50, y_position, f"{key}: {value}")
+#                 y_position -= 15
+#                 if y_position < 100:
+#                     pdf.showPage()
+#                     y_position = height - 100
+
+#     # Footer Content
+#     pdf.setFont("Montserrat-Bold", 8)
+#     pdf.drawString(40, 40, f"PDF ID: {uuid.uuid4()}")
+#     pdf.drawString(40, 25, "Company Address: Seduta HQ, Dar es Salaam, Tanzania")
+#     pdf.drawRightString(width - 40, 25, "ISO 27001:2023 Certified")
+
+#     pdf.showPage()
+#     pdf.save()
+#     buffer.seek(0)
+#     return buffer
