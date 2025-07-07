@@ -51,7 +51,8 @@ class Asset(models.Model):
     estimated_value = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
     asset_image = models.ImageField(upload_to="asset_images/", blank=True, null=True)
     instruction = models.TextField(blank=True, null=True)
-    assigned_to = models.ManyToManyField(Heir, blank=True, null=True, related_name='inherited_assets')
+    assigned_to = models.ManyToManyField(Heir, blank=True, related_name='inherited_assets')
+
 
     created_at = models.DateField(auto_now_add=True, blank=True, null=True)
     updated_at = models.DateField(auto_now=True, blank=True, null=True)
@@ -83,6 +84,7 @@ class SpecialAccount(models.Model):
     account_number = models.CharField(max_length=255, blank=True, null=True)
     assigned_to = models.ForeignKey(Heir, on_delete=models.SET_NULL, blank=True, null=True, related_name='special_accounts')
 
+
     created_at = models.DateField(auto_now_add=True, blank=True, null=True)
     updated_at = models.DateField(auto_now=True, blank=True, null=True)
 
@@ -106,7 +108,8 @@ class ConfidentialInfo(models.Model):
     testator = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='confidential_infos')
     confidential_file = models.FileField(blank=True, null=True, upload_to="confidential_files/")
     instructions = models.TextField()
-    assigned_to = models.ManyToManyField(Heir, blank=True, null=True, related_name='confidential_access')
+    assigned_to = models.ManyToManyField(Heir, blank=True, related_name='confidential_access')
+
 
     created_at = models.DateField(auto_now_add=True, blank=True, null=True)
     updated_at = models.DateField(auto_now=True, blank=True, null=True)
