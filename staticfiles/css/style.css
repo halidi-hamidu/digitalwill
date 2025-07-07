@@ -1,0 +1,89 @@
+body {
+    background-color: #f9f9f9;
+    margin: 0px;
+    padding: 0px;
+    font-family: "Montserrat", sans-serif;
+}
+
+/* Login form and register form styling start */
+
+.login-container {
+      max-width: 400px;
+      margin: 80px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
+}
+
+.register-container {
+    max-width: 500px;
+    margin: 60px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
+}
+
+.logo-title {
+    text-align: center;
+    margin-top: 60px;
+    margin-bottom: 20px;
+}
+
+.logo-title h1 {
+    font-size: 32px;
+    font-weight: 300;
+    color: #e65100;
+}
+
+.btn-orange {
+    background-color: #e65100;
+    color: white;
+}
+
+.btn-orange:hover {
+    background-color: #cc4600;
+}
+
+h2 {
+    color: #e65100;
+    /* margin-bottom: 25px; */
+}
+
+/* Login form and register form styling end */
+
+/* testator registration form styling start */
+.form-container {
+    max-width: 800px;
+    margin: 40px auto;
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
+}
+
+h2 {
+    color: #e65100;
+    margin-bottom: 30px;
+}
+
+.form-label {
+    font-weight: 500;
+}
+
+.btn-orange {
+    background-color: #e65100;
+    color: white;
+}
+
+.btn-orange:hover {
+    background-color: #cc4600;
+}
+
+.section-title {
+    color: #e65100;
+    margin-top: 30px;
+    margin-bottom: 15px;
+}
+/* testator registration form styling end */
